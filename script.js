@@ -13,6 +13,19 @@ const CONFIG = {
 document.documentElement.classList.add("ultra-stable");
 document.body.classList.add("ultra-stable");
 
+/* SPCK preview uses demo mode; Vercel uses public Supabase mode */
+const IS_LOCAL_PREVIEW = (() => {
+  const host = location.hostname.toLowerCase();
+
+  return (
+    location.protocol === "file:" ||
+    host === "" ||
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host.includes("spck")
+  );
+})();
+
 /* Remove old service worker/cache so her phone stops opening crashing old files */
 (function clearOldCache() {
   if ("serviceWorker" in navigator) {
@@ -235,8 +248,8 @@ if (logoTap) {
   });
 }
 
-/* PUBLIC / DEMO CONVO WALL - STABLE VERSION */
-(function setupConvoWall() {
+/* PUBLIC / DEMO COMMENTS - STABLE VERSION */
+(function setupComments() {
   const convoForm = document.getElementById("convoForm");
   const convoUsername = document.getElementById("convoUsername");
   const convoMessage = document.getElementById("convoMessage");
@@ -280,6 +293,8 @@ if (logoTap) {
   ];
 
   function configured() {
+    if (IS_LOCAL_PREVIEW) return false;
+
     return (
       CONFIG.supabaseUrl.startsWith("https://") &&
       CONFIG.supabaseAnonKey.length > 40 &&
@@ -293,14 +308,14 @@ if (logoTap) {
       db = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
       online = true;
 
-      if (convoMode) convoMode.textContent = "Online public wall";
+      if (convoMode) convoMode.textContent = "Comments online";
     } else {
       online = false;
 
-      if (convoMode) convoMode.textContent = "Demo mode on this phone";
+      if (convoMode) convoMode.textContent = "Demo comments";
     }
 
-    loadWall();
+    loadComments();
   }
 
   function makeId() {
@@ -311,12 +326,12 @@ if (logoTap) {
     return "local-" + Date.now() + "-" + Math.random().toString(16).slice(2);
   }
 
-  function getLocalWall() {
-    return JSON.parse(localStorage.getItem("femaleEmxStableWall") || "[]");
+  function getLocalComments() {
+    return JSON.parse(localStorage.getItem("femaleEmxStableComments") || "[]");
   }
 
-  function saveLocalWall(items) {
-    localStorage.setItem("femaleEmxStableWall", JSON.stringify(items.slice(0, 20)));
+  function saveLocalComments(items) {
+    localStorage.setItem("femaleEmxStableComments", JSON.stringify(items.slice(0, 20)));
   }
 
   function cleanUsername(value) {
@@ -369,9 +384,9 @@ if (logoTap) {
     const reactionCount = items.reduce((sum, item) => sum + totalReactions(item), 0);
 
     convoStats.textContent =
-      posts + " posts • " +
+      posts + " comments • " +
       reactionCount + " reactions • " +
-      (online ? "public wall online" : "demo wall");
+      (online ? "comments online" : "demo comments");
   }
 
   function hasReacted(id, key) {
@@ -394,7 +409,7 @@ if (logoTap) {
     return sorted;
   }
 
-  function renderWall(items) {
+  function renderComments(items) {
     const safeItems = sortItems(items || []).slice(0, 12);
     feedCache = safeItems;
 
@@ -404,7 +419,7 @@ if (logoTap) {
     if (!safeItems.length) {
       const empty = document.createElement("div");
       empty.className = "wall-empty";
-      empty.textContent = "No messages yet. Be the first neon fan.";
+      empty.textContent = "No comments yet. Be the first fan.";
       convoFeed.appendChild(empty);
       return;
     }
@@ -480,16 +495,16 @@ if (logoTap) {
     convoFeed.appendChild(frag);
   }
 
-  async function loadWall() {
+  async function loadComments() {
     if (loading || document.hidden) return;
 
     loading = true;
 
     if (refreshConvoBtn) refreshConvoBtn.disabled = true;
-    if (convoMode) convoMode.textContent = online ? "Loading wall..." : "Demo wall";
+    if (convoMode) convoMode.textContent = online ? "Loading comments..." : "Demo comments";
 
     if (!online) {
-      renderWall(getLocalWall());
+      renderComments(getLocalComments());
       loading = false;
       if (refreshConvoBtn) refreshConvoBtn.disabled = false;
       return;
@@ -505,15 +520,15 @@ if (logoTap) {
     if (refreshConvoBtn) refreshConvoBtn.disabled = false;
 
     if (error) {
-      console.error("Wall load error:", error);
-      if (convoMode) convoMode.textContent = "Wall paused";
-      showToast("Wall error. Check Supabase SQL.");
-      renderWall([]);
+      console.error("Comments load error:", error);
+      if (convoMode) convoMode.textContent = "Comments paused";
+      showToast("Comments error. Check Supabase.");
+      renderComments([]);
       return;
     }
 
-    if (convoMode) convoMode.textContent = "Online public wall";
-    renderWall(data || []);
+    if (convoMode) convoMode.textContent = "Comments online";
+    renderComments(data || []);
   }
 
   async function sendMessage(submitBtn) {
@@ -534,7 +549,7 @@ if (logoTap) {
     }
 
     if (!message) {
-      showToast("Write a message first.");
+      showToast("Write a comment first.");
       return;
     }
 
@@ -560,14 +575,14 @@ if (logoTap) {
     convoUsername.value = username;
 
     if (!online) {
-      const current = getLocalWall();
+      const current = getLocalComments();
       current.unshift(post);
-      saveLocalWall(current);
+      saveLocalComments(current);
 
       convoMessage.value = "";
       updateCharCount();
-      renderWall(current);
-      showToast("Demo message posted.");
+      renderComments(current);
+      showToast("Demo comment posted.");
 
       if (submitBtn) submitBtn.disabled = false;
       return;
@@ -586,15 +601,15 @@ if (logoTap) {
     if (submitBtn) submitBtn.disabled = false;
 
     if (error) {
-      console.error("Post error:", error);
-      showToast("Message failed. Check Supabase.");
+      console.error("Comment post error:", error);
+      showToast("Comment failed. Check Supabase.");
       return;
     }
 
     convoMessage.value = "";
     updateCharCount();
-    showToast("Message posted 💜");
-    loadWall();
+    showToast("Comment posted 💜");
+    loadComments();
   }
 
   async function react(id, key, button) {
@@ -618,7 +633,7 @@ if (logoTap) {
     setStats(feedCache);
 
     if (!online) {
-      saveLocalWall(feedCache);
+      saveLocalComments(feedCache);
       return;
     }
 
@@ -671,7 +686,7 @@ if (logoTap) {
       convoMessage.value = btn.dataset.fill || "";
       updateCharCount();
       convoMessage.focus();
-      showToast("Quick message loaded");
+      showToast("Quick comment loaded");
     });
   });
 
@@ -679,7 +694,7 @@ if (logoTap) {
 
   if (convoSort) {
     convoSort.addEventListener("change", () => {
-      renderWall(feedCache);
+      renderComments(feedCache);
     });
   }
 
@@ -692,8 +707,8 @@ if (logoTap) {
 
   if (refreshConvoBtn) {
     refreshConvoBtn.addEventListener("click", () => {
-      loadWall();
-      showToast("Wall refreshed.");
+      loadComments();
+      showToast("Comments refreshed.");
     });
   }
 
@@ -706,7 +721,7 @@ if (logoTap) {
 
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
-      loadWall();
+      loadComments();
     }
   });
 
