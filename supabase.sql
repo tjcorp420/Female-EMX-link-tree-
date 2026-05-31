@@ -254,5 +254,5 @@ grant update (hearts, bolts, fires, crowns, wins, controllers, reports, hidden) 
 grant delete on public.fan_wall to authenticated;
 
 -- IMPORTANT: Replace YOUR_ADMIN_EMAIL_HERE with your email, then run this one line too.
--- Example: insert into public.admin_users (email) values ('yourname@gmail.com') on conflict (email) do nothing;
+-- Example: insert into public.admin_users (email) values ('jordantj333@gmail.com') on conflict (email) do nothing;
 -- insert into public.admin_users (email) values ('YOUR_ADMIN_EMAIL_HERE') on conflict (email) do nothing;
