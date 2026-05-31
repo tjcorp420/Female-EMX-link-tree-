@@ -1,16 +1,21 @@
 const ADMIN_CONFIG = {
   supabaseUrl: "https://iosbgyokkfoaaawwqqqb.supabase.co",
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlvc2JneW9ra2ZvYWFhd3dxcXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxOTMxMzIsImV4cCI6MjA5NTc2OTEzMn0.6xBFuHlvrhXyss9xzKCVH5CmrYdopSRAw0JoVbQ5mDE",
-  settingsId: "main"
+  settingsId: "main",
+  redirectUrl: "https://female-emx-link-tree.vercel.app/admin.html"
 };
 
-const db = window.supabase.createClient(ADMIN_CONFIG.supabaseUrl, ADMIN_CONFIG.supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
+const db = window.supabase.createClient(
+  ADMIN_CONFIG.supabaseUrl,
+  ADMIN_CONFIG.supabaseAnonKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
   }
-});
+);
 
 const $ = (id) => document.getElementById(id);
 
@@ -70,22 +75,30 @@ const DEFAULT_SETTINGS = {
 
 function showToast(message) {
   if (!adminToast) return;
+
   adminToast.textContent = message;
   adminToast.classList.add("show");
+
   clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => adminToast.classList.remove("show"), 1900);
+  showToast.timer = setTimeout(() => {
+    adminToast.classList.remove("show");
+  }, 1900);
 }
 
 function showOnly(view) {
-  loginCard.classList.toggle("hidden", view !== "login");
-  lockedCard.classList.toggle("hidden", view !== "locked");
-  adminPanel.classList.toggle("hidden", view !== "admin");
+  if (loginCard) loginCard.classList.toggle("hidden", view !== "login");
+  if (lockedCard) lockedCard.classList.toggle("hidden", view !== "locked");
+  if (adminPanel) adminPanel.classList.toggle("hidden", view !== "admin");
 }
 
 function cleanUrl(value) {
   const trimmed = String(value || "").trim();
+
   if (!trimmed) return "";
-  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) return trimmed;
+  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) {
+    return trimmed;
+  }
+
   return "https://" + trimmed;
 }
 
@@ -98,14 +111,17 @@ function escapeHtml(value) {
 function timeAgo(dateString) {
   const then = new Date(dateString).getTime();
   const diff = Math.max(0, Math.floor((Date.now() - then) / 1000));
+
   if (diff < 60) return "just now";
   if (diff < 3600) return Math.floor(diff / 60) + "m ago";
   if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+
   return Math.floor(diff / 86400) + "d ago";
 }
 
 async function sendLoginLink() {
   const email = emailInput.value.trim().toLowerCase();
+
   if (!email || !email.includes("@")) {
     showToast("Enter your admin email first.");
     return;
@@ -116,7 +132,8 @@ async function sendLoginLink() {
   const { error } = await db.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: window.location.origin + window.location.pathname
+      emailRedirectTo: ADMIN_CONFIG.redirectUrl,
+      shouldCreateUser: true
     }
   });
 
@@ -124,17 +141,19 @@ async function sendLoginLink() {
 
   if (error) {
     console.error("Login link error:", error);
-    showToast("Login link failed. Check Supabase Auth settings.");
+    showToast("Login link failed. Check Supabase URL settings.");
     return;
   }
 
-  showToast("Check your email for the login link.");
+  showToast("Login link sent. Check your email.");
 }
 
 async function signOut() {
   await db.auth.signOut();
+
   currentUser = null;
   currentAdminEmail = "";
+
   showOnly("login");
   showToast("Signed out.");
 }
@@ -162,7 +181,15 @@ async function checkAdminAccess(user) {
 async function boot() {
   showOnly("login");
 
-  const { data } = await db.auth.getSession();
+  const { data, error } = await db.auth.getSession();
+
+  if (error) {
+    console.error("Session error:", error);
+    showToast("Login session error. Try sending a new link.");
+    showOnly("login");
+    return;
+  }
+
   currentUser = data?.session?.user || null;
 
   if (!currentUser) {
@@ -173,12 +200,21 @@ async function boot() {
   const allowed = await checkAdminAccess(currentUser);
 
   if (!allowed) {
-    lockedText.textContent = "Signed in as " + (currentUser.email || "unknown") + ". Add this email to public.admin_users in Supabase, then reload.";
+    if (lockedText) {
+      lockedText.textContent =
+        "Signed in as " +
+        (currentUser.email || "unknown") +
+        ". Add this email to public.admin_users in Supabase, then reload.";
+    }
+
     showOnly("locked");
     return;
   }
 
-  adminEmail.textContent = currentUser.email || "Admin";
+  if (adminEmail) {
+    adminEmail.textContent = currentUser.email || "Admin";
+  }
+
   showOnly("admin");
   await loadSettings();
   await loadComments();
@@ -198,25 +234,34 @@ async function loadSettings() {
     return;
   }
 
-  fillSettings({ ...DEFAULT_SETTINGS, ...(data || {}) });
+  fillSettings({
+    ...DEFAULT_SETTINGS,
+    ...(data || {})
+  });
 }
 
 function fillSettings(settings) {
-  brandNameInput.value = settings.brand_name || DEFAULT_SETTINGS.brand_name;
-  creatorCodeInput.value = settings.creator_code || DEFAULT_SETTINGS.creator_code;
-  statusBadgeInput.value = settings.status_badge || DEFAULT_SETTINGS.status_badge;
-  backgroundModeInput.value = settings.background_mode || DEFAULT_SETTINGS.background_mode;
-  primaryColorInput.value = settings.primary_color || DEFAULT_SETTINGS.primary_color;
-  secondaryColorInput.value = settings.secondary_color || DEFAULT_SETTINGS.secondary_color;
-  taglineInput.value = settings.tagline || DEFAULT_SETTINGS.tagline;
-  pinnedMessageInput.value = settings.pinned_message || DEFAULT_SETTINGS.pinned_message;
-  tiktokUrlInput.value = settings.tiktok_url || DEFAULT_SETTINGS.tiktok_url;
-  emxTweaksUrlInput.value = settings.emx_tweaks_url || DEFAULT_SETTINGS.emx_tweaks_url;
-  fortniteMapsUrlInput.value = settings.fortnite_maps_url || DEFAULT_SETTINGS.fortnite_maps_url;
-  featuredClipUrlInput.value = settings.featured_clip_url || "";
-  questionOfWeekInput.value = settings.question_of_week || "";
-  commentsEnabledInput.checked = settings.comments_enabled !== false;
-  reactionsEnabledInput.checked = settings.reactions_enabled !== false;
+  if (brandNameInput) brandNameInput.value = settings.brand_name || DEFAULT_SETTINGS.brand_name;
+  if (creatorCodeInput) creatorCodeInput.value = settings.creator_code || DEFAULT_SETTINGS.creator_code;
+  if (statusBadgeInput) statusBadgeInput.value = settings.status_badge || DEFAULT_SETTINGS.status_badge;
+  if (backgroundModeInput) backgroundModeInput.value = settings.background_mode || DEFAULT_SETTINGS.background_mode;
+  if (primaryColorInput) primaryColorInput.value = settings.primary_color || DEFAULT_SETTINGS.primary_color;
+  if (secondaryColorInput) secondaryColorInput.value = settings.secondary_color || DEFAULT_SETTINGS.secondary_color;
+  if (taglineInput) taglineInput.value = settings.tagline || DEFAULT_SETTINGS.tagline;
+  if (pinnedMessageInput) pinnedMessageInput.value = settings.pinned_message || DEFAULT_SETTINGS.pinned_message;
+  if (tiktokUrlInput) tiktokUrlInput.value = settings.tiktok_url || DEFAULT_SETTINGS.tiktok_url;
+  if (emxTweaksUrlInput) emxTweaksUrlInput.value = settings.emx_tweaks_url || DEFAULT_SETTINGS.emx_tweaks_url;
+  if (fortniteMapsUrlInput) fortniteMapsUrlInput.value = settings.fortnite_maps_url || DEFAULT_SETTINGS.fortnite_maps_url;
+  if (featuredClipUrlInput) featuredClipUrlInput.value = settings.featured_clip_url || "";
+  if (questionOfWeekInput) questionOfWeekInput.value = settings.question_of_week || "";
+
+  if (commentsEnabledInput) {
+    commentsEnabledInput.checked = settings.comments_enabled !== false;
+  }
+
+  if (reactionsEnabledInput) {
+    reactionsEnabledInput.checked = settings.reactions_enabled !== false;
+  }
 }
 
 async function saveSettings() {
@@ -258,6 +303,8 @@ async function saveSettings() {
 }
 
 async function loadComments() {
+  if (!commentList) return;
+
   commentList.innerHTML = '<div class="admin-comment">Loading comments...</div>';
 
   let query = db
@@ -266,10 +313,19 @@ async function loadComments() {
     .order("created_at", { ascending: false })
     .limit(60);
 
-  const filter = commentFilter.value;
-  if (filter === "reported") query = query.gt("reports", 0);
-  if (filter === "hidden") query = query.eq("hidden", true);
-  if (filter === "visible") query = query.eq("hidden", false).lt("reports", 3);
+  const filter = commentFilter ? commentFilter.value : "all";
+
+  if (filter === "reported") {
+    query = query.gt("reports", 0);
+  }
+
+  if (filter === "hidden") {
+    query = query.eq("hidden", true);
+  }
+
+  if (filter === "visible") {
+    query = query.eq("hidden", false).lt("reports", 3);
+  }
 
   const { data, error } = await query;
 
@@ -283,6 +339,8 @@ async function loadComments() {
 }
 
 function renderComments(items) {
+  if (!commentList) return;
+
   commentList.textContent = "";
 
   if (!items.length) {
@@ -297,18 +355,29 @@ function renderComments(items) {
     card.className = "admin-comment" + (item.hidden ? " hidden-comment" : "");
 
     const reactionTotal =
-      Number(item.hearts || 0) + Number(item.bolts || 0) + Number(item.fires || 0) +
-      Number(item.crowns || 0) + Number(item.wins || 0) + Number(item.controllers || 0);
+      Number(item.hearts || 0) +
+      Number(item.bolts || 0) +
+      Number(item.fires || 0) +
+      Number(item.crowns || 0) +
+      Number(item.wins || 0) +
+      Number(item.controllers || 0);
 
     card.innerHTML = `
       <div class="comment-top">
         <div class="comment-user">${escapeHtml(item.vibe || "💜")} ${escapeHtml(item.username || "@fan")}</div>
         <div class="comment-time">${timeAgo(item.created_at)}</div>
       </div>
+
       <div class="comment-message">${escapeHtml(item.message || "")}</div>
+
       <div class="comment-meta">
-        ${escapeHtml(item.topic || "shoutout")} • ${escapeHtml(item.theme || "neon")} • ${reactionTotal} reactions • ${Number(item.reports || 0)} reports • ${item.hidden ? "hidden" : "visible"}
+        ${escapeHtml(item.topic || "shoutout")} •
+        ${escapeHtml(item.theme || "neon")} •
+        ${reactionTotal} reactions •
+        ${Number(item.reports || 0)} reports •
+        ${item.hidden ? "hidden" : "visible"}
       </div>
+
       <div class="comment-actions">
         <button class="ghost-btn" type="button" data-pin="${item.id}">Pin as message</button>
         <button class="ghost-btn" type="button" data-hide="${item.id}">${item.hidden ? "Unhide" : "Hide"}</button>
@@ -324,8 +393,9 @@ function renderComments(items) {
 }
 
 function findCachedComment(id) {
-  const cards = [...commentList.querySelectorAll("[data-pin]")];
-  const pinButton = cards.find((button) => button.dataset.pin === id);
+  const pinButtons = [...commentList.querySelectorAll("[data-pin]")];
+  const pinButton = pinButtons.find((button) => button.dataset.pin === id);
+
   if (!pinButton) return null;
 
   const card = pinButton.closest(".admin-comment");
@@ -334,14 +404,19 @@ function findCachedComment(id) {
   const user = card.querySelector(".comment-user")?.textContent || "@fan";
   const message = card.querySelector(".comment-message")?.textContent || "";
 
-  return { user, message };
+  return {
+    user,
+    message
+  };
 }
 
 async function pinComment(id) {
   const item = findCachedComment(id);
   if (!item) return;
 
-  pinnedMessageInput.value = `<strong>${escapeHtml(item.user)}</strong>: ${escapeHtml(item.message)}`;
+  pinnedMessageInput.value =
+    `<strong>${escapeHtml(item.user)}</strong>: ${escapeHtml(item.message)}`;
+
   await saveSettings();
 }
 
@@ -396,37 +471,64 @@ async function deleteComment(id) {
   loadComments();
 }
 
-sendLoginBtn.addEventListener("click", sendLoginLink);
-signOutBtn.addEventListener("click", signOut);
-signOutFromLockedBtn.addEventListener("click", signOut);
-saveSettingsBtn.addEventListener("click", saveSettings);
-refreshCommentsBtn.addEventListener("click", loadComments);
-commentFilter.addEventListener("change", loadComments);
+if (sendLoginBtn) {
+  sendLoginBtn.addEventListener("click", sendLoginLink);
+}
 
-commentList.addEventListener("click", (event) => {
-  const pin = event.target.closest("[data-pin]");
-  const hide = event.target.closest("[data-hide]");
-  const reset = event.target.closest("[data-reset]");
-  const del = event.target.closest("[data-delete]");
+if (signOutBtn) {
+  signOutBtn.addEventListener("click", signOut);
+}
 
-  if (pin) {
-    pinComment(pin.dataset.pin);
-    return;
-  }
+if (signOutFromLockedBtn) {
+  signOutFromLockedBtn.addEventListener("click", signOut);
+}
 
-  if (hide) {
-    const card = hide.closest(".admin-comment");
-    toggleHidden(hide.dataset.hide, !card.classList.contains("hidden-comment"));
-    return;
-  }
+if (saveSettingsBtn) {
+  saveSettingsBtn.addEventListener("click", saveSettings);
+}
 
-  if (reset) {
-    resetReports(reset.dataset.reset);
-    return;
-  }
+if (refreshCommentsBtn) {
+  refreshCommentsBtn.addEventListener("click", loadComments);
+}
 
-  if (del) {
-    deleteComment(del.dataset.delete);
+if (commentFilter) {
+  commentFilter.addEventListener("change", loadComments);
+}
+
+if (commentList) {
+  commentList.addEventListener("click", (event) => {
+    const pin = event.target.closest("[data-pin]");
+    const hide = event.target.closest("[data-hide]");
+    const reset = event.target.closest("[data-reset]");
+    const del = event.target.closest("[data-delete]");
+
+    if (pin) {
+      pinComment(pin.dataset.pin);
+      return;
+    }
+
+    if (hide) {
+      const card = hide.closest(".admin-comment");
+      toggleHidden(hide.dataset.hide, !card.classList.contains("hidden-comment"));
+      return;
+    }
+
+    if (reset) {
+      resetReports(reset.dataset.reset);
+      return;
+    }
+
+    if (del) {
+      deleteComment(del.dataset.delete);
+    }
+  });
+}
+
+db.auth.onAuthStateChange((_event, session) => {
+  currentUser = session?.user || null;
+
+  if (currentUser) {
+    boot();
   }
 });
 
