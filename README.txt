@@ -1,21 +1,24 @@
-FEMALE EMX ADMIN CONTROL UPGRADE
+FEMALE EMX ADMIN V3 LIVE APPLY UPGRADE
 
 WHAT THIS ZIP ADDS
-- Public Female EMX site stays at index.html
-- New admin control panel at admin.html
-- Same Supabase project controls both
-- Admin can edit site colors/background mode, links, creator code, pinned message, comments on/off, reactions on/off
-- Admin can view comments, filter reported/hidden, hide/unhide, reset reports, pin comment as message, and delete any comment
-- Users can still delete only their own comments
-- Report still hides comments from public after 3 reports
+- Admin Dashboard tabs: Dashboard, Settings, Comments, Voting, Preview
+- Apply Changes Live button
+- Public site reads site_settings and can update live while open
+- Dashboard stats: comments, reports, hidden, reactions, votes, top fan, latest comment
+- Announcement bar controls
+- Featured clip controls
+- Top fans leaderboard controls
+- Map voting controls with reset votes
+- Moderation: hide/unhide, reset reports, delete, pin as message
+- Password login admin page, no magic-link email rate limits
+- Stable phone-friendly public page
 
-FILES TO UPLOAD TO GITHUB/VERCEL ROOT
+UPLOAD TO GITHUB/VERCEL ROOT
 index.html
 styles.css
 script.js
 admin.html
 admin.css
-admin.js
 manifest.json
 sw.js
 image.png
@@ -23,26 +26,20 @@ icon-192.png
 icon-512.png
 supabase.sql
 
+admin.js is included only as a placeholder. Admin V3 uses inline JavaScript inside admin.html so the login button works reliably on iPhone.
+
 SUPABASE SETUP
-1. Supabase > Authentication > Providers > enable Email provider if needed.
-2. Supabase > Authentication > Providers > Anonymous Sign-Ins should stay enabled.
-3. Supabase > SQL Editor > New Query > paste and run supabase.sql.
-4. Add your admin email by running this in SQL Editor:
-
-insert into public.admin_users (email)
-values ('YOUR_EMAIL_HERE')
-on conflict (email) do nothing;
-
-Replace YOUR_EMAIL_HERE with the email you will use to log into the admin page.
-
-HOW TO USE ADMIN
-Open:
-https://YOUR-VERCEL-SITE.vercel.app/admin.html
-
-Enter your admin email.
-Tap Send Login Link.
-Open the email from Supabase.
-After login, you can control the public site.
+1. Supabase > Authentication > Providers > Email enabled.
+2. Supabase > Authentication > Providers > Anonymous Sign-Ins enabled.
+3. Supabase > Authentication > Users > create user:
+   Email: jordantj333@gmail.com
+   Password: your admin password
+   Auto Confirm: ON
+4. Supabase > SQL Editor > New Query > paste/run supabase.sql.
+5. If needed, run:
+   insert into public.admin_users (email)
+   values ('jordantj333@gmail.com')
+   on conflict (email) do nothing;
 
 VERCEL SETTINGS
 Framework Preset: Other
@@ -51,12 +48,11 @@ Output Directory: blank
 Root Directory: blank
 
 TEST LINKS
-Public site:
-https://YOUR-VERCEL-SITE.vercel.app/?v=admin-control1
+Public:
+https://female-emx-link-tree.vercel.app/?v=adminv3-live1
 
-Admin panel:
-https://YOUR-VERCEL-SITE.vercel.app/admin.html?v=admin-control1
+Admin:
+https://female-emx-link-tree.vercel.app/admin.html?v=adminv3-live1
 
 IMPORTANT
-Do not paste service_role keys into any website file.
-The anon public key is okay because RLS policies protect the database.
+Do not paste a service_role key into any website file. The anon key is okay because RLS protects the database.

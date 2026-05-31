@@ -2,288 +2,222 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#07000d">
   <meta name="description" content="Female EMX admin control panel.">
-
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Female EMX Admin">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-  <link rel="stylesheet" href="admin.css?v=inline-login1">
-
+  <meta name="format-detection" content="telephone=no">
   <title>Female EMX Admin</title>
-
+  <link rel="stylesheet" href="admin.css?v=adminv3-live1">
   <style>
-    #loginForm {
-      display: grid;
-      gap: 14px;
-      position: relative;
-      z-index: 99;
-      pointer-events: auto !important;
-    }
-
-    #loginForm label {
-      margin-top: 8px;
-    }
-
-    #emailInput,
-    #passwordInput {
-      position: relative;
-      z-index: 100;
-      pointer-events: auto !important;
-    }
-
-    #loginBtn {
-      width: 100% !important;
-      min-height: 58px !important;
-      margin-top: 12px !important;
-      border: 0 !important;
-      border-radius: 999px !important;
-      background: linear-gradient(135deg, #c026ff, #62ff2e) !important;
-      color: #08020f !important;
-      font-size: 18px !important;
-      font-weight: 950 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      cursor: pointer !important;
-      pointer-events: auto !important;
-      position: relative !important;
-      z-index: 101 !important;
-      -webkit-appearance: none !important;
-      appearance: none !important;
-      touch-action: manipulation !important;
-    }
-
-    #loginBtn:active {
-      transform: scale(0.98);
-      filter: brightness(1.1);
-    }
-
-    #loginBtn:disabled {
-      opacity: 0.55;
-    }
-
-    .help-text {
-      color: rgba(255,255,255,.65);
-      line-height: 1.45;
-    }
+    #loginForm { display:grid; gap:14px; position:relative; z-index:99; pointer-events:auto!important; }
+    #loginForm label { margin-top:8px; }
+    #emailInput,#passwordInput { position:relative; z-index:100; pointer-events:auto!important; }
+    #loginBtn { width:100%!important; min-height:58px!important; margin-top:12px!important; border:0!important; border-radius:999px!important; background:linear-gradient(135deg,#c026ff,#62ff2e)!important; color:#08020f!important; font-size:18px!important; font-weight:950!important; display:flex!important; align-items:center!important; justify-content:center!important; cursor:pointer!important; pointer-events:auto!important; position:relative!important; z-index:101!important; -webkit-appearance:none!important; appearance:none!important; touch-action:manipulation!important; }
+    #loginBtn:active { transform:scale(.98); filter:brightness(1.1); }
+    #loginBtn:disabled { opacity:.55; }
   </style>
 </head>
-
 <body>
+  <div class="admin-bg" aria-hidden="true"></div>
+
   <main class="admin-app">
     <section class="admin-hero">
-      <div class="admin-logo-shell">
-        <img src="image.png" alt="Female EMX logo" class="admin-logo">
+      <div class="admin-logo-wrap">
+        <img src="image.png" alt="Female EMX" class="admin-logo" width="96" height="96" decoding="async">
       </div>
-
       <p class="admin-pill">Admin Control Panel</p>
-
       <h1>Female <span>EMX</span> Admin</h1>
-
-      <p class="admin-subtitle">
-        Control comments, links, pinned text, creator code, colors, background mode, and site status.
-      </p>
+      <p class="admin-sub">Control comments, links, pinned text, creator code, colors, background mode, voting, announcements, and live site status.</p>
     </section>
 
     <section class="admin-card" id="loginCard">
       <h2>Admin Login</h2>
-
-      <p>
-        Sign in with your approved admin email and password. No email link needed.
-      </p>
-
+      <p>Sign in with your approved admin email and password. No email link needed.</p>
       <form id="loginForm" onsubmit="loginWithPassword(event)">
         <label for="emailInput">Email</label>
-        <input
-          id="emailInput"
-          type="email"
-          placeholder="jordantj333@gmail.com"
-          autocomplete="email"
-          required
-        >
-
+        <input id="emailInput" type="email" placeholder="jordantj333@gmail.com" autocomplete="email" required>
         <label for="passwordInput">Password</label>
-        <input
-          id="passwordInput"
-          type="password"
-          placeholder="Admin password"
-          autocomplete="current-password"
-          required
-        >
-
-        <button
-          class="mini-btn"
-          id="loginBtn"
-          type="button"
-          onclick="loginWithPassword(event)"
-        >
-          Login
-        </button>
+        <input id="passwordInput" type="password" placeholder="Admin password" autocomplete="current-password" required>
+        <button class="primary-btn" id="loginBtn" type="button" onclick="loginWithPassword(event)">Login</button>
       </form>
-
-      <p class="help-text" id="loginStatus">
-        Ready. Use the admin user created in Supabase Authentication → Users.
-      </p>
+      <p class="tiny" id="loginStatus">Ready. Use the admin user created in Supabase Authentication → Users.</p>
     </section>
 
     <section class="admin-card hidden" id="lockedCard">
       <h2>Not Admin Yet</h2>
-
-      <p id="lockedText">
-        This email is signed in, but it is not listed as an admin.
-      </p>
-
-      <button class="ghost-btn" id="signOutFromLockedBtn" type="button">
-        Sign Out
-      </button>
+      <p id="lockedText">You are signed in, but this email is not in the admin allowlist.</p>
+      <button class="ghost-btn" id="signOutFromLockedBtn" type="button">Sign Out</button>
     </section>
 
     <section class="admin-panel hidden" id="adminPanel">
       <div class="admin-topbar">
         <div>
-          <p class="section-label">Signed in</p>
+          <p class="tiny-label">Signed in as</p>
           <strong id="adminEmail">Admin</strong>
         </div>
-
-        <button class="ghost-btn" id="signOutBtn" type="button">
-          Sign Out
-        </button>
+        <div class="topbar-actions">
+          <button class="primary-btn small live-btn" id="applyLiveTopBtn" type="button">Apply Live</button>
+          <a class="ghost-link" href="index.html" target="_blank" rel="noopener">Open Public Site</a>
+          <button class="ghost-btn" id="signOutBtn" type="button">Sign Out</button>
+        </div>
       </div>
 
-      <section class="admin-card">
-        <p class="section-label">Site Settings</p>
+      <nav class="admin-tabs" aria-label="Admin tabs">
+        <button class="tab-btn active" type="button" data-tab="dashboardTab">Dashboard</button>
+        <button class="tab-btn" type="button" data-tab="settingsTab">Settings</button>
+        <button class="tab-btn" type="button" data-tab="commentsTab">Comments</button>
+        <button class="tab-btn" type="button" data-tab="votingTab">Voting</button>
+        <button class="tab-btn" type="button" data-tab="previewTab">Preview</button>
+      </nav>
 
-        <h2>Public Site Controls</h2>
-
-        <div class="admin-grid">
-          <div class="field">
-            <label for="brandNameInput">Brand Name</label>
-            <input id="brandNameInput" type="text" placeholder="Female EMX">
+      <section class="tab-panel" id="dashboardTab">
+        <section class="admin-card">
+          <div class="section-head">
+            <div>
+              <p class="tiny-label">Overview</p>
+              <h2>Dashboard</h2>
+            </div>
+            <button class="ghost-btn" id="refreshDashboardBtn" type="button">Refresh</button>
           </div>
-
-          <div class="field">
-            <label for="creatorCodeInput">Creator Code</label>
-            <input id="creatorCodeInput" type="text" placeholder="MEDUSAA">
+          <div class="stats-grid">
+            <div class="stat-card"><span>Total Comments</span><strong id="statTotalComments">0</strong></div>
+            <div class="stat-card"><span>Visible</span><strong id="statVisibleComments">0</strong></div>
+            <div class="stat-card"><span>Reported</span><strong id="statReportedComments">0</strong></div>
+            <div class="stat-card"><span>Hidden</span><strong id="statHiddenComments">0</strong></div>
+            <div class="stat-card"><span>Total Reactions</span><strong id="statTotalReactions">0</strong></div>
+            <div class="stat-card"><span>Total Votes</span><strong id="statTotalVotes">0</strong></div>
           </div>
-
-          <div class="field">
-            <label for="statusBadgeInput">Status Badge</label>
-            <input id="statusBadgeInput" type="text" placeholder="Official Creator Hub">
+          <div class="mini-dashboard-list">
+            <div class="mini-dashboard-row"><span>Top Fan</span><strong id="statTopFan">No fan yet</strong></div>
+            <div class="mini-dashboard-row"><span>Latest Comment</span><strong id="statLatestComment">No comments yet</strong></div>
+            <div class="mini-dashboard-row"><span>Live Settings</span><strong id="statLiveStatus">Ready</strong></div>
           </div>
-
-          <div class="field">
-            <label for="backgroundModeInput">Background Mode</label>
-            <select id="backgroundModeInput">
-              <option value="neon">Neon</option>
-              <option value="lowlag">Low Lag</option>
-              <option value="royal">Royal</option>
-              <option value="pink">Pink</option>
-              <option value="dark">Dark</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="primaryColorInput">Primary Color</label>
-            <input id="primaryColorInput" type="color" value="#c026ff">
-          </div>
-
-          <div class="field">
-            <label for="secondaryColorInput">Secondary Color</label>
-            <input id="secondaryColorInput" type="color" value="#62ff2e">
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="taglineInput">Tagline</label>
-          <textarea id="taglineInput" rows="3" placeholder="TikTok clips, Fortnite maps, creator code..."></textarea>
-        </div>
-
-        <div class="field">
-          <label for="pinnedMessageInput">Pinned Message</label>
-          <textarea id="pinnedMessageInput" rows="4" placeholder="Pinned message shown on the public site"></textarea>
-        </div>
-
-        <div class="admin-grid">
-          <div class="field">
-            <label for="tiktokUrlInput">TikTok URL</label>
-            <input id="tiktokUrlInput" type="url" placeholder="https://www.tiktok.com/@ttfemale_emx">
-          </div>
-
-          <div class="field">
-            <label for="emxTweaksUrlInput">EMX Tweaks URL</label>
-            <input id="emxTweaksUrlInput" type="url" placeholder="https://efect-macros-x-tweaks.vercel.app/">
-          </div>
-
-          <div class="field">
-            <label for="fortniteMapsUrlInput">Fortnite Maps URL</label>
-            <input id="fortniteMapsUrlInput" type="url" placeholder="https://fortnite.gg/creator/medusaa">
-          </div>
-
-          <div class="field">
-            <label for="featuredClipUrlInput">Featured Clip URL</label>
-            <input id="featuredClipUrlInput" type="url" placeholder="Optional TikTok clip link">
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="questionOfWeekInput">Question of the Week</label>
-          <input id="questionOfWeekInput" type="text" placeholder="What map should Female EMX make next?">
-        </div>
-
-        <div class="toggle-row">
-          <label>
-            <input id="commentsEnabledInput" type="checkbox" checked>
-            Comments Enabled
-          </label>
-
-          <label>
-            <input id="reactionsEnabledInput" type="checkbox" checked>
-            Reactions Enabled
-          </label>
-        </div>
-
-        <button class="mini-btn" id="saveSettingsBtn" type="button">
-          Save Settings
-        </button>
+        </section>
       </section>
 
-      <section class="admin-card">
-        <div class="admin-section-head">
-          <div>
-            <p class="section-label">Comments</p>
-            <h2>Moderation</h2>
+      <section class="tab-panel hidden" id="settingsTab">
+        <section class="admin-card">
+          <div class="section-head">
+            <div>
+              <p class="tiny-label">Design + Links</p>
+              <h2>Site Controls</h2>
+            </div>
+            <button class="primary-btn small live-btn" id="saveSettingsBtn" type="button">Apply Changes Live</button>
           </div>
 
-          <button class="ghost-btn" id="refreshCommentsBtn" type="button">
-            Refresh
-          </button>
-        </div>
+          <div class="form-grid">
+            <label>Brand Name <input id="brandNameInput" type="text" maxlength="40"></label>
+            <label>Creator Code <input id="creatorCodeInput" type="text" maxlength="24"></label>
+            <label>Status Badge <input id="statusBadgeInput" type="text" maxlength="50"></label>
+            <label>Background Mode
+              <select id="backgroundModeInput">
+                <option value="neon">Neon Purple/Green</option>
+                <option value="pink">Pink Glow</option>
+                <option value="royal">Royal Gold</option>
+                <option value="green">Green Mode</option>
+                <option value="lowlag">Low-Lag Dark</option>
+              </select>
+            </label>
+            <label>Primary Color <input id="primaryColorInput" type="color" value="#c026ff"></label>
+            <label>Secondary Color <input id="secondaryColorInput" type="color" value="#62ff2e"></label>
+          </div>
 
-        <div class="field">
-          <label for="commentFilter">Filter</label>
-          <select id="commentFilter">
-            <option value="all">All Comments</option>
-            <option value="visible">Visible</option>
-            <option value="reported">Reported</option>
-            <option value="hidden">Hidden</option>
-          </select>
-        </div>
+          <label>Tagline <textarea id="taglineInput" rows="3" maxlength="180"></textarea></label>
+          <label>Pinned Message <textarea id="pinnedMessageInput" rows="3" maxlength="260"></textarea></label>
 
-        <div class="comment-list" id="commentList">
-          <div class="admin-comment">Login to load comments.</div>
-        </div>
+          <div class="form-grid">
+            <label>TikTok URL <input id="tiktokUrlInput" type="url"></label>
+            <label>EMX Tweaks URL <input id="emxTweaksUrlInput" type="url"></label>
+            <label>Fortnite Maps URL <input id="fortniteMapsUrlInput" type="url"></label>
+            <label>Featured Clip URL <input id="featuredClipUrlInput" type="url" placeholder="Optional"></label>
+          </div>
+
+          <label>Question of the Week <input id="questionOfWeekInput" type="text" maxlength="120" placeholder="Optional"></label>
+
+          <div class="admin-subcard">
+            <p class="tiny-label">Announcement Bar</p>
+            <label>Announcement Text <input id="announcementTextInput" type="text" maxlength="140" placeholder="New map dropping soon..."></label>
+            <div class="switch-row">
+              <label class="switch-label"><input id="announcementEnabledInput" type="checkbox"> Announcement Enabled</label>
+              <label class="switch-label"><input id="showFeaturedClipInput" type="checkbox"> Show Featured Clip</label>
+              <label class="switch-label"><input id="showLeaderboardInput" type="checkbox"> Show Top Fans</label>
+              <label class="switch-label"><input id="commentsEnabledInput" type="checkbox"> Comments Enabled</label>
+              <label class="switch-label"><input id="reactionsEnabledInput" type="checkbox"> Reactions Enabled</label>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="tab-panel hidden" id="commentsTab">
+        <section class="admin-card">
+          <div class="section-head">
+            <div>
+              <p class="tiny-label">Moderation</p>
+              <h2>Comments</h2>
+            </div>
+            <div class="topbar-actions">
+              <select id="commentFilter">
+                <option value="all">All</option>
+                <option value="reported">Reported</option>
+                <option value="hidden">Hidden</option>
+                <option value="visible">Visible</option>
+              </select>
+              <button class="primary-btn small" id="refreshCommentsBtn" type="button">Refresh</button>
+            </div>
+          </div>
+          <div class="comment-list" id="commentList"></div>
+        </section>
+      </section>
+
+      <section class="tab-panel hidden" id="votingTab">
+        <section class="admin-card">
+          <div class="section-head">
+            <div>
+              <p class="tiny-label">Fan Vote</p>
+              <h2>Map Voting</h2>
+            </div>
+            <div class="topbar-actions">
+              <button class="ghost-btn" id="refreshVotesBtn" type="button">Refresh Votes</button>
+              <button class="danger-btn" id="resetVotesBtn" type="button">Reset Votes</button>
+            </div>
+          </div>
+          <label>Vote Question <input id="voteQuestionInput" type="text" maxlength="120"></label>
+          <div class="form-grid">
+            <label>Option 1 <input id="voteOption1Input" type="text" maxlength="40"></label>
+            <label>Option 2 <input id="voteOption2Input" type="text" maxlength="40"></label>
+            <label>Option 3 <input id="voteOption3Input" type="text" maxlength="40"></label>
+            <label>Option 4 <input id="voteOption4Input" type="text" maxlength="40"></label>
+            <label>Option 5 <input id="voteOption5Input" type="text" maxlength="40"></label>
+            <label>Option 6 <input id="voteOption6Input" type="text" maxlength="40"></label>
+          </div>
+          <div class="switch-row">
+            <label class="switch-label"><input id="voteEnabledInput" type="checkbox"> Voting Enabled</label>
+          </div>
+          <button class="primary-btn" id="applyVoteSettingsBtn" type="button">Apply Voting Changes Live</button>
+          <div class="vote-admin-results" id="voteAdminResults">Loading votes...</div>
+        </section>
+      </section>
+
+      <section class="tab-panel hidden" id="previewTab">
+        <section class="admin-card">
+          <p class="tiny-label">Preview</p>
+          <h2>Live Preview</h2>
+          <p class="tiny">This preview updates while you type. Tap Apply Changes Live to push it to the public site.</p>
+          <div class="preview-card" id="previewCard">
+            <div class="preview-badge" id="previewBadge">Official Creator Hub</div>
+            <h3 id="previewBrand">Female EMX</h3>
+            <p id="previewTagline">TikTok clips, Fortnite maps, creator code, EMX links, and neon gamer energy in one place.</p>
+            <div class="preview-pinned" id="previewPinned">Use creator code <strong>MEDUSAA</strong>, play the maps, and drop a comment below 💜⚡</div>
+            <div class="preview-dots"><span></span><span></span><span></span></div>
+          </div>
+        </section>
       </section>
     </section>
   </main>
 
-  <div class="admin-toast" id="adminToast" role="status" aria-live="polite"></div>
+  <div class="toast" id="adminToast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <script>
     const ADMIN_CONFIG = {
       supabaseUrl: "https://iosbgyokkfoaaawwqqqb.supabase.co",
@@ -291,21 +225,13 @@
       settingsId: "main"
     };
 
-    const db = window.supabase.createClient(
-      ADMIN_CONFIG.supabaseUrl,
-      ADMIN_CONFIG.supabaseAnonKey,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true
-        }
-      }
-    );
-
+    const db = window.supabase.createClient(ADMIN_CONFIG.supabaseUrl, ADMIN_CONFIG.supabaseAnonKey, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
     const $ = (id) => document.getElementById(id);
-
     let currentUser = null;
+    let currentComments = [];
+    let currentVotes = [];
 
     const DEFAULT_SETTINGS = {
       id: "main",
@@ -323,46 +249,49 @@
       comments_enabled: true,
       reactions_enabled: true,
       featured_clip_url: "",
-      question_of_week: ""
+      question_of_week: "What map should Female EMX make next?",
+      announcement_enabled: false,
+      announcement_text: "",
+      show_featured_clip: true,
+      show_leaderboard: true,
+      vote_enabled: true,
+      vote_question: "What map should Female EMX make next?",
+      vote_option_1: "Zone Wars",
+      vote_option_2: "Box Fights",
+      vote_option_3: "1v1 Map",
+      vote_option_4: "Deathrun",
+      vote_option_5: "Aim/Edit Practice",
+      vote_option_6: "Fashion Map"
     };
 
     function showToast(message) {
-      const adminToast = $("adminToast");
-      if (!adminToast) return;
-
-      adminToast.textContent = message;
-      adminToast.classList.add("show");
-
+      const t = $("adminToast");
+      if (!t) return;
+      t.textContent = message;
+      t.classList.add("show");
       clearTimeout(showToast.timer);
-      showToast.timer = setTimeout(() => {
-        adminToast.classList.remove("show");
-      }, 1900);
+      showToast.timer = setTimeout(() => t.classList.remove("show"), 1900);
     }
-
-    function setLoginStatus(message) {
-      const loginStatus = $("loginStatus");
-      if (loginStatus) loginStatus.textContent = message;
-    }
-
+    function setLoginStatus(message) { const el = $("loginStatus"); if (el) el.textContent = message; }
     function showOnly(view) {
       $("loginCard").classList.toggle("hidden", view !== "login");
       $("lockedCard").classList.toggle("hidden", view !== "locked");
       $("adminPanel").classList.toggle("hidden", view !== "admin");
     }
-
+    function showTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tabId));
+      document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("hidden", p.id !== tabId));
+      if (tabId === "dashboardTab") loadDashboard();
+      if (tabId === "commentsTab") loadComments();
+      if (tabId === "votingTab") loadVotes();
+    }
     function cleanUrl(value) {
       const trimmed = String(value || "").trim();
       if (!trimmed) return "";
       if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) return trimmed;
       return "https://" + trimmed;
     }
-
-    function escapeHtml(value) {
-      const div = document.createElement("div");
-      div.textContent = String(value || "");
-      return div.innerHTML;
-    }
-
+    function escapeHtml(value) { const div = document.createElement("div"); div.textContent = String(value || ""); return div.innerHTML; }
     function timeAgo(dateString) {
       const then = new Date(dateString).getTime();
       const diff = Math.max(0, Math.floor((Date.now() - then) / 1000));
@@ -371,174 +300,91 @@
       if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
       return Math.floor(diff / 86400) + "d ago";
     }
+    function totalReactions(item) {
+      return ["hearts","bolts","fires","crowns","wins","controllers"].reduce((sum, k) => sum + Number(item[k] || 0), 0);
+    }
 
     window.loginWithPassword = async function loginWithPassword(event) {
       if (event) event.preventDefault();
-
-      const emailInput = $("emailInput");
-      const passwordInput = $("passwordInput");
-      const loginBtn = $("loginBtn");
-
-      const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
-      const password = passwordInput ? passwordInput.value : "";
-
+      const email = $("emailInput").value.trim().toLowerCase();
+      const password = $("passwordInput").value;
       showToast("Checking login...");
       setLoginStatus("Checking login...");
-
-      if (!email || !email.includes("@")) {
-        showToast("Enter your admin email.");
-        setLoginStatus("Enter your admin email.");
-        return;
-      }
-
-      if (!password || password.length < 6) {
-        showToast("Enter your admin password.");
-        setLoginStatus("Enter your admin password.");
-        return;
-      }
-
-      loginBtn.disabled = true;
-
-      const { data, error } = await db.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      loginBtn.disabled = false;
-
-      if (error) {
-        console.error("Password login error:", error);
-        showToast(error.message || "Login failed.");
-        setLoginStatus(error.message || "Login failed.");
-        return;
-      }
-
+      if (!email || !email.includes("@")) { showToast("Enter your admin email."); return; }
+      if (!password || password.length < 6) { showToast("Enter your admin password."); return; }
+      $("loginBtn").disabled = true;
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+      $("loginBtn").disabled = false;
+      if (error) { console.error(error); showToast(error.message || "Login failed."); setLoginStatus(error.message || "Login failed."); return; }
       currentUser = data?.user || null;
-
       showToast("Logged in.");
-      setLoginStatus("Logged in. Loading admin panel...");
-
       await boot();
     };
 
     async function signOut() {
       await db.auth.signOut();
-
       currentUser = null;
-
-      const passwordInput = $("passwordInput");
-      if (passwordInput) passwordInput.value = "";
-
+      $("passwordInput").value = "";
       showOnly("login");
-      setLoginStatus("Signed out.");
       showToast("Signed out.");
     }
-
     async function checkAdminAccess(user) {
       const email = String(user?.email || "").toLowerCase();
-
       if (!email) return false;
-
-      const { data, error } = await db
-        .from("admin_users")
-        .select("email")
-        .eq("email", email)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Admin check error:", error);
-        showToast("Admin check failed.");
-        return false;
-      }
-
+      const { data, error } = await db.from("admin_users").select("email").eq("email", email).maybeSingle();
+      if (error) { console.error(error); showToast("Admin check failed."); return false; }
       return !!data;
     }
-
     async function boot() {
       showOnly("login");
-
       const { data, error } = await db.auth.getSession();
-
-      if (error) {
-        console.error("Session error:", error);
-        showToast("Session error. Login again.");
-        setLoginStatus("Session error. Login again.");
-        showOnly("login");
-        return;
-      }
-
+      if (error) { console.error(error); showToast("Session error."); return; }
       currentUser = data?.session?.user || null;
-
-      if (!currentUser) {
-        showOnly("login");
-        setLoginStatus("Ready. Enter your email and password.");
-        return;
-      }
-
+      if (!currentUser) { setLoginStatus("Ready. Enter your email and password."); return; }
       const allowed = await checkAdminAccess(currentUser);
-
       if (!allowed) {
-        const lockedText = $("lockedText");
-
-        if (lockedText) {
-          lockedText.textContent =
-            "Signed in as " +
-            (currentUser.email || "unknown") +
-            ". Add this email to public.admin_users in Supabase, then reload.";
-        }
-
+        $("lockedText").textContent = "Signed in as " + (currentUser.email || "unknown") + ". Add this email to public.admin_users in Supabase, then reload.";
         showOnly("locked");
         return;
       }
-
       $("adminEmail").textContent = currentUser.email || "Admin";
-
       showOnly("admin");
-
       await loadSettings();
-      await loadComments();
+      await Promise.all([loadDashboard(), loadComments(), loadVotes()]);
     }
 
     async function loadSettings() {
-      const { data, error } = await db
-        .from("site_settings")
-        .select("*")
-        .eq("id", ADMIN_CONFIG.settingsId)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Settings load error:", error);
-        showToast("Settings could not load. Run supabase.sql.");
-        fillSettings(DEFAULT_SETTINGS);
-        return;
-      }
-
-      fillSettings({
-        ...DEFAULT_SETTINGS,
-        ...(data || {})
-      });
+      const { data, error } = await db.from("site_settings").select("*").eq("id", ADMIN_CONFIG.settingsId).maybeSingle();
+      if (error) { console.error(error); showToast("Settings could not load. Run supabase.sql."); fillSettings(DEFAULT_SETTINGS); return; }
+      fillSettings({ ...DEFAULT_SETTINGS, ...(data || {}) });
     }
-
-    function fillSettings(settings) {
-      $("brandNameInput").value = settings.brand_name || DEFAULT_SETTINGS.brand_name;
-      $("creatorCodeInput").value = settings.creator_code || DEFAULT_SETTINGS.creator_code;
-      $("statusBadgeInput").value = settings.status_badge || DEFAULT_SETTINGS.status_badge;
-      $("backgroundModeInput").value = settings.background_mode || DEFAULT_SETTINGS.background_mode;
-      $("primaryColorInput").value = settings.primary_color || DEFAULT_SETTINGS.primary_color;
-      $("secondaryColorInput").value = settings.secondary_color || DEFAULT_SETTINGS.secondary_color;
-      $("taglineInput").value = settings.tagline || DEFAULT_SETTINGS.tagline;
-      $("pinnedMessageInput").value = settings.pinned_message || DEFAULT_SETTINGS.pinned_message;
-      $("tiktokUrlInput").value = settings.tiktok_url || DEFAULT_SETTINGS.tiktok_url;
-      $("emxTweaksUrlInput").value = settings.emx_tweaks_url || DEFAULT_SETTINGS.emx_tweaks_url;
-      $("fortniteMapsUrlInput").value = settings.fortnite_maps_url || DEFAULT_SETTINGS.fortnite_maps_url;
-      $("featuredClipUrlInput").value = settings.featured_clip_url || "";
-      $("questionOfWeekInput").value = settings.question_of_week || "";
-      $("commentsEnabledInput").checked = settings.comments_enabled !== false;
-      $("reactionsEnabledInput").checked = settings.reactions_enabled !== false;
+    function fillSettings(s) {
+      $("brandNameInput").value = s.brand_name || DEFAULT_SETTINGS.brand_name;
+      $("creatorCodeInput").value = s.creator_code || DEFAULT_SETTINGS.creator_code;
+      $("statusBadgeInput").value = s.status_badge || DEFAULT_SETTINGS.status_badge;
+      $("backgroundModeInput").value = s.background_mode || DEFAULT_SETTINGS.background_mode;
+      $("primaryColorInput").value = s.primary_color || DEFAULT_SETTINGS.primary_color;
+      $("secondaryColorInput").value = s.secondary_color || DEFAULT_SETTINGS.secondary_color;
+      $("taglineInput").value = s.tagline || DEFAULT_SETTINGS.tagline;
+      $("pinnedMessageInput").value = s.pinned_message || DEFAULT_SETTINGS.pinned_message;
+      $("tiktokUrlInput").value = s.tiktok_url || DEFAULT_SETTINGS.tiktok_url;
+      $("emxTweaksUrlInput").value = s.emx_tweaks_url || DEFAULT_SETTINGS.emx_tweaks_url;
+      $("fortniteMapsUrlInput").value = s.fortnite_maps_url || DEFAULT_SETTINGS.fortnite_maps_url;
+      $("featuredClipUrlInput").value = s.featured_clip_url || "";
+      $("questionOfWeekInput").value = s.question_of_week || "";
+      $("announcementEnabledInput").checked = s.announcement_enabled === true;
+      $("announcementTextInput").value = s.announcement_text || "";
+      $("showFeaturedClipInput").checked = s.show_featured_clip !== false;
+      $("showLeaderboardInput").checked = s.show_leaderboard !== false;
+      $("commentsEnabledInput").checked = s.comments_enabled !== false;
+      $("reactionsEnabledInput").checked = s.reactions_enabled !== false;
+      $("voteEnabledInput").checked = s.vote_enabled !== false;
+      $("voteQuestionInput").value = s.vote_question || DEFAULT_SETTINGS.vote_question;
+      [1,2,3,4,5,6].forEach((n) => { $("voteOption"+n+"Input").value = s["vote_option_"+n] || DEFAULT_SETTINGS["vote_option_"+n]; });
+      updatePreview();
     }
-
-    async function saveSettings() {
-      const settings = {
+    function collectSettings() {
+      return {
         id: ADMIN_CONFIG.settingsId,
         brand_name: $("brandNameInput").value.trim() || DEFAULT_SETTINGS.brand_name,
         creator_code: $("creatorCodeInput").value.trim() || DEFAULT_SETTINGS.creator_code,
@@ -553,226 +399,191 @@
         fortnite_maps_url: cleanUrl($("fortniteMapsUrlInput").value) || DEFAULT_SETTINGS.fortnite_maps_url,
         featured_clip_url: cleanUrl($("featuredClipUrlInput").value),
         question_of_week: $("questionOfWeekInput").value.trim(),
+        announcement_enabled: $("announcementEnabledInput").checked,
+        announcement_text: $("announcementTextInput").value.trim(),
+        show_featured_clip: $("showFeaturedClipInput").checked,
+        show_leaderboard: $("showLeaderboardInput").checked,
         comments_enabled: $("commentsEnabledInput").checked,
         reactions_enabled: $("reactionsEnabledInput").checked,
+        vote_enabled: $("voteEnabledInput").checked,
+        vote_question: $("voteQuestionInput").value.trim() || DEFAULT_SETTINGS.vote_question,
+        vote_option_1: $("voteOption1Input").value.trim() || DEFAULT_SETTINGS.vote_option_1,
+        vote_option_2: $("voteOption2Input").value.trim() || DEFAULT_SETTINGS.vote_option_2,
+        vote_option_3: $("voteOption3Input").value.trim() || DEFAULT_SETTINGS.vote_option_3,
+        vote_option_4: $("voteOption4Input").value.trim() || DEFAULT_SETTINGS.vote_option_4,
+        vote_option_5: $("voteOption5Input").value.trim() || DEFAULT_SETTINGS.vote_option_5,
+        vote_option_6: $("voteOption6Input").value.trim() || DEFAULT_SETTINGS.vote_option_6,
         updated_at: new Date().toISOString()
       };
+    }
+    async function saveSettings() {
+      const buttons = [$("saveSettingsBtn"), $("applyLiveTopBtn"), $("applyVoteSettingsBtn")].filter(Boolean);
+      buttons.forEach((b) => b.disabled = true);
+      const { error } = await db.from("site_settings").upsert(collectSettings(), { onConflict: "id" });
+      buttons.forEach((b) => b.disabled = false);
+      if (error) { console.error(error); showToast("Apply failed. Confirm admin access + SQL."); return; }
+      showToast("Applied live. Refresh public site or watch it update.");
+      $("statLiveStatus").textContent = "Applied " + new Date().toLocaleTimeString();
+      updatePreview();
+      loadVotes();
+    }
+    function updatePreview() {
+      const brand = $("brandNameInput")?.value || DEFAULT_SETTINGS.brand_name;
+      const badge = $("statusBadgeInput")?.value || DEFAULT_SETTINGS.status_badge;
+      const tagline = $("taglineInput")?.value || DEFAULT_SETTINGS.tagline;
+      const pinned = $("pinnedMessageInput")?.value || DEFAULT_SETTINGS.pinned_message;
+      const primary = $("primaryColorInput")?.value || DEFAULT_SETTINGS.primary_color;
+      const secondary = $("secondaryColorInput")?.value || DEFAULT_SETTINGS.secondary_color;
+      $("previewBrand").textContent = brand;
+      $("previewBadge").textContent = badge;
+      $("previewTagline").textContent = tagline;
+      $("previewPinned").innerHTML = pinned;
+      $("previewCard").style.setProperty("--purple", primary);
+      $("previewCard").style.setProperty("--green", secondary);
+    }
 
-      $("saveSettingsBtn").disabled = true;
-
-      const { error } = await db
-        .from("site_settings")
-        .upsert(settings, { onConflict: "id" });
-
-      $("saveSettingsBtn").disabled = false;
-
-      if (error) {
-        console.error("Settings save error:", error);
-        showToast("Save failed. Confirm your email is in admin_users.");
-        return;
-      }
-
-      showToast("Settings saved. Public site updates on refresh.");
+    async function loadDashboard() {
+      const { data: comments } = await db.from("fan_wall").select("username,message,hidden,reports,hearts,bolts,fires,crowns,wins,controllers,created_at").limit(250);
+      const { data: votes } = await db.from("map_votes").select("option_key").limit(500);
+      const list = comments || [];
+      const visible = list.filter((c) => !c.hidden && Number(c.reports || 0) < 3);
+      const reported = list.filter((c) => Number(c.reports || 0) > 0);
+      const hidden = list.filter((c) => c.hidden || Number(c.reports || 0) >= 3);
+      const reactions = list.reduce((sum, c) => sum + totalReactions(c), 0);
+      const fanScores = new Map();
+      list.forEach((c) => fanScores.set(c.username || "@fan", (fanScores.get(c.username || "@fan") || 0) + totalReactions(c)));
+      const topFan = [...fanScores.entries()].sort((a,b) => b[1]-a[1]).find((x) => x[1] > 0);
+      const latest = [...list].sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0];
+      $("statTotalComments").textContent = list.length;
+      $("statVisibleComments").textContent = visible.length;
+      $("statReportedComments").textContent = reported.length;
+      $("statHiddenComments").textContent = hidden.length;
+      $("statTotalReactions").textContent = reactions;
+      $("statTotalVotes").textContent = (votes || []).length;
+      $("statTopFan").textContent = topFan ? topFan[0] + " · " + topFan[1] : "No fan yet";
+      $("statLatestComment").textContent = latest ? (latest.username || "@fan") + ": " + (latest.message || "").slice(0, 46) : "No comments yet";
     }
 
     async function loadComments() {
-      const commentList = $("commentList");
-
-      commentList.innerHTML = '<div class="admin-comment">Loading comments...</div>';
-
-      let query = db
-        .from("fan_wall")
-        .select("id, username, message, vibe, topic, theme, hearts, bolts, fires, crowns, wins, controllers, reports, hidden, created_at")
-        .order("created_at", { ascending: false })
-        .limit(60);
-
+      const listEl = $("commentList");
+      listEl.innerHTML = '<div class="admin-comment">Loading comments...</div>';
+      let query = db.from("fan_wall").select("id, username, message, vibe, topic, theme, hearts, bolts, fires, crowns, wins, controllers, reports, hidden, created_at").order("created_at", { ascending: false }).limit(80);
       const filter = $("commentFilter").value;
-
       if (filter === "reported") query = query.gt("reports", 0);
       if (filter === "hidden") query = query.eq("hidden", true);
       if (filter === "visible") query = query.eq("hidden", false).lt("reports", 3);
-
       const { data, error } = await query;
-
-      if (error) {
-        console.error("Comment load error:", error);
-        commentList.innerHTML = '<div class="admin-comment">Could not load comments. Run supabase.sql and confirm admin access.</div>';
-        return;
-      }
-
-      renderComments(data || []);
+      if (error) { console.error(error); listEl.innerHTML = '<div class="admin-comment">Could not load comments. Run supabase.sql and confirm admin access.</div>'; return; }
+      currentComments = data || [];
+      renderComments(currentComments);
+      loadDashboard();
     }
-
     function renderComments(items) {
-      const commentList = $("commentList");
-
-      commentList.textContent = "";
-
-      if (!items.length) {
-        commentList.innerHTML = '<div class="admin-comment">No comments found for this filter.</div>';
-        return;
-      }
-
-      const fragment = document.createDocumentFragment();
-
+      const el = $("commentList");
+      el.textContent = "";
+      if (!items.length) { el.innerHTML = '<div class="admin-comment">No comments found for this filter.</div>'; return; }
+      const frag = document.createDocumentFragment();
       items.forEach((item) => {
         const card = document.createElement("div");
         card.className = "admin-comment" + (item.hidden ? " hidden-comment" : "");
-
-        const reactionTotal =
-          Number(item.hearts || 0) +
-          Number(item.bolts || 0) +
-          Number(item.fires || 0) +
-          Number(item.crowns || 0) +
-          Number(item.wins || 0) +
-          Number(item.controllers || 0);
-
+        const reactionTotal = totalReactions(item);
         card.innerHTML = `
-          <div class="comment-top">
-            <div class="comment-user">${escapeHtml(item.vibe || "💜")} ${escapeHtml(item.username || "@fan")}</div>
-            <div class="comment-time">${timeAgo(item.created_at)}</div>
-          </div>
-
+          <div class="comment-top"><div class="comment-user">${escapeHtml(item.vibe || "💜")} ${escapeHtml(item.username || "@fan")}</div><div class="comment-time">${timeAgo(item.created_at)}</div></div>
           <div class="comment-message">${escapeHtml(item.message || "")}</div>
-
-          <div class="comment-meta">
-            ${escapeHtml(item.topic || "shoutout")} •
-            ${escapeHtml(item.theme || "neon")} •
-            ${reactionTotal} reactions •
-            ${Number(item.reports || 0)} reports •
-            ${item.hidden ? "hidden" : "visible"}
-          </div>
-
+          <div class="comment-meta">${escapeHtml(item.topic || "shoutout")} • ${escapeHtml(item.theme || "neon")} • ${reactionTotal} reactions • ${Number(item.reports || 0)} reports • ${item.hidden ? "hidden" : "visible"}</div>
           <div class="comment-actions">
             <button class="ghost-btn" type="button" data-pin="${item.id}">Pin as message</button>
             <button class="ghost-btn" type="button" data-hide="${item.id}">${item.hidden ? "Unhide" : "Hide"}</button>
             <button class="ghost-btn" type="button" data-reset="${item.id}">Reset reports</button>
             <button class="danger-btn" type="button" data-delete="${item.id}">Delete</button>
-          </div>
-        `;
-
-        fragment.appendChild(card);
+          </div>`;
+        frag.appendChild(card);
       });
-
-      commentList.appendChild(fragment);
+      el.appendChild(frag);
     }
-
-    function findCachedComment(id) {
-      const commentList = $("commentList");
-      const pinButtons = [...commentList.querySelectorAll("[data-pin]")];
-      const pinButton = pinButtons.find((button) => button.dataset.pin === id);
-
-      if (!pinButton) return null;
-
-      const card = pinButton.closest(".admin-comment");
-      if (!card) return null;
-
-      const user = card.querySelector(".comment-user")?.textContent || "@fan";
-      const message = card.querySelector(".comment-message")?.textContent || "";
-
-      return { user, message };
-    }
-
+    function findCachedComment(id) { return currentComments.find((c) => String(c.id) === String(id)); }
     async function pinComment(id) {
-      const item = findCachedComment(id);
-      if (!item) return;
-
-      $("pinnedMessageInput").value =
-        `<strong>${escapeHtml(item.user)}</strong>: ${escapeHtml(item.message)}`;
-
+      const item = findCachedComment(id); if (!item) return;
+      $("pinnedMessageInput").value = `<strong>${escapeHtml(item.vibe || "💜")} ${escapeHtml(item.username || "@fan")}</strong>: ${escapeHtml(item.message || "")}`;
+      showTab("settingsTab");
       await saveSettings();
     }
-
     async function toggleHidden(id, shouldHide) {
-      const { error } = await db
-        .from("fan_wall")
-        .update({ hidden: shouldHide })
-        .eq("id", id);
-
-      if (error) {
-        console.error("Hide update error:", error);
-        showToast("Could not update comment.");
-        return;
-      }
-
+      const { error } = await db.from("fan_wall").update({ hidden: shouldHide }).eq("id", id);
+      if (error) { console.error(error); showToast("Could not update comment."); return; }
       showToast(shouldHide ? "Comment hidden." : "Comment unhidden.");
       loadComments();
     }
-
     async function resetReports(id) {
-      const { error } = await db
-        .from("fan_wall")
-        .update({ reports: 0 })
-        .eq("id", id);
-
-      if (error) {
-        console.error("Reset reports error:", error);
-        showToast("Could not reset reports.");
-        return;
-      }
-
+      const { error } = await db.from("fan_wall").update({ reports: 0 }).eq("id", id);
+      if (error) { console.error(error); showToast("Could not reset reports."); return; }
       showToast("Reports reset.");
       loadComments();
     }
-
     async function deleteComment(id) {
-      const ok = confirm("Delete this comment permanently?");
-      if (!ok) return;
-
-      const { error } = await db
-        .from("fan_wall")
-        .delete()
-        .eq("id", id);
-
-      if (error) {
-        console.error("Delete error:", error);
-        showToast("Could not delete comment.");
-        return;
-      }
-
+      if (!confirm("Delete this comment permanently?")) return;
+      const { error } = await db.from("fan_wall").delete().eq("id", id);
+      if (error) { console.error(error); showToast("Could not delete comment."); return; }
       showToast("Comment deleted.");
       loadComments();
     }
 
+    function voteLabels() { return [1,2,3,4,5,6].map((n) => ({ key: "option_"+n, label: $("voteOption"+n+"Input").value.trim() || DEFAULT_SETTINGS["vote_option_"+n] })); }
+    async function loadVotes() {
+      const { data, error } = await db.from("map_votes").select("option_key").limit(1000);
+      if (error) { console.error(error); $("voteAdminResults").textContent = "Votes unavailable. Run supabase.sql."; return; }
+      currentVotes = data || [];
+      renderVoteAdminResults();
+      loadDashboard();
+    }
+    function renderVoteAdminResults() {
+      const labels = voteLabels();
+      const counts = Object.fromEntries(labels.map((o) => [o.key, 0]));
+      currentVotes.forEach((v) => { if (counts[v.option_key] !== undefined) counts[v.option_key]++; });
+      const total = Object.values(counts).reduce((a,b)=>a+b,0);
+      const el = $("voteAdminResults");
+      el.textContent = "";
+      labels.forEach((o) => {
+        const count = counts[o.key] || 0;
+        const pct = total ? Math.round((count/total)*100) : 0;
+        const row = document.createElement("div");
+        row.className = "admin-vote-row";
+        row.innerHTML = `<div class="vote-result-top"><span>${escapeHtml(o.label)}</span><span>${count} votes · ${pct}%</span></div><div class="vote-bar"><div class="vote-bar-fill" style="width:${pct}%"></div></div>`;
+        el.appendChild(row);
+      });
+    }
+    async function resetVotes() {
+      if (!confirm("Reset all map votes?")) return;
+      const { error } = await db.from("map_votes").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (error) { console.error(error); showToast("Could not reset votes."); return; }
+      showToast("Votes reset.");
+      loadVotes();
+    }
+
     function wireEvents() {
+      document.querySelectorAll(".tab-btn").forEach((btn) => btn.addEventListener("click", () => showTab(btn.dataset.tab)));
+      ["saveSettingsBtn","applyLiveTopBtn","applyVoteSettingsBtn"].forEach((id) => { const b=$(id); if (b) b.addEventListener("click", saveSettings); });
+      ["brandNameInput","creatorCodeInput","statusBadgeInput","backgroundModeInput","primaryColorInput","secondaryColorInput","taglineInput","pinnedMessageInput"].forEach((id) => { const el=$(id); if (el) el.addEventListener("input", updatePreview); });
+      $("refreshDashboardBtn").addEventListener("click", loadDashboard);
+      $("refreshCommentsBtn").addEventListener("click", loadComments);
+      $("refreshVotesBtn").addEventListener("click", loadVotes);
+      $("resetVotesBtn").addEventListener("click", resetVotes);
+      $("commentFilter").addEventListener("change", loadComments);
       $("signOutBtn").addEventListener("click", signOut);
       $("signOutFromLockedBtn").addEventListener("click", signOut);
-      $("saveSettingsBtn").addEventListener("click", saveSettings);
-      $("refreshCommentsBtn").addEventListener("click", loadComments);
-      $("commentFilter").addEventListener("change", loadComments);
-
       $("commentList").addEventListener("click", (event) => {
         const pin = event.target.closest("[data-pin]");
         const hide = event.target.closest("[data-hide]");
         const reset = event.target.closest("[data-reset]");
         const del = event.target.closest("[data-delete]");
-
-        if (pin) {
-          pinComment(pin.dataset.pin);
-          return;
-        }
-
-        if (hide) {
-          const card = hide.closest(".admin-comment");
-          toggleHidden(hide.dataset.hide, !card.classList.contains("hidden-comment"));
-          return;
-        }
-
-        if (reset) {
-          resetReports(reset.dataset.reset);
-          return;
-        }
-
-        if (del) {
-          deleteComment(del.dataset.delete);
-        }
+        if (pin) return pinComment(pin.dataset.pin);
+        if (hide) { const card = hide.closest(".admin-comment"); return toggleHidden(hide.dataset.hide, !card.classList.contains("hidden-comment")); }
+        if (reset) return resetReports(reset.dataset.reset);
+        if (del) return deleteComment(del.dataset.delete);
       });
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      wireEvents();
-      boot();
-    });
+    document.addEventListener("DOMContentLoaded", () => { wireEvents(); boot(); });
   </script>
 </body>
 </html>

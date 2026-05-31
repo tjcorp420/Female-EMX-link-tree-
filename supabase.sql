@@ -1,4 +1,4 @@
--- Female EMX public comments + admin control panel setup
+-- Female EMX Admin V3 live apply + public comments setup
 -- Run this in Supabase SQL Editor.
 -- After it succeeds, add your admin email near the bottom where shown.
 
@@ -254,5 +254,80 @@ grant update (hearts, bolts, fires, crowns, wins, controllers, reports, hidden) 
 grant delete on public.fan_wall to authenticated;
 
 -- IMPORTANT: Replace YOUR_ADMIN_EMAIL_HERE with your email, then run this one line too.
--- Example: insert into public.admin_users (email) values ('jordantj333@gmail.com') on conflict (email) do nothing;
+-- Example: insert into public.admin_users (email) values ('yourname@gmail.com') on conflict (email) do nothing;
 -- insert into public.admin_users (email) values ('YOUR_ADMIN_EMAIL_HERE') on conflict (email) do nothing;
+
+
+-- ADMIN V2: announcement bar, top fans, map voting controls.
+-- Safe to run multiple times.
+
+alter table public.site_settings add column if not exists announcement_enabled boolean not null default false;
+alter table public.site_settings add column if not exists announcement_text text not null default 'New updates will show here.';
+alter table public.site_settings add column if not exists show_featured_clip boolean not null default true;
+alter table public.site_settings add column if not exists show_leaderboard boolean not null default true;
+alter table public.site_settings add column if not exists vote_enabled boolean not null default true;
+alter table public.site_settings add column if not exists vote_question text not null default 'What map should Female EMX make next?';
+alter table public.site_settings add column if not exists vote_option_1 text not null default 'Zone Wars';
+alter table public.site_settings add column if not exists vote_option_2 text not null default 'Box Fights';
+alter table public.site_settings add column if not exists vote_option_3 text not null default '1v1 Map';
+alter table public.site_settings add column if not exists vote_option_4 text not null default 'Deathrun';
+alter table public.site_settings add column if not exists vote_option_5 text not null default 'Aim/Edit Practice';
+alter table public.site_settings add column if not exists vote_option_6 text not null default 'Fashion Map';
+
+create table if not exists public.map_votes (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid(),
+  option_key text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(owner_id)
+);
+
+alter table public.map_votes add column if not exists owner_id uuid not null default auth.uid();
+alter table public.map_votes add column if not exists option_key text not null default 'option_1';
+alter table public.map_votes add column if not exists created_at timestamptz not null default now();
+alter table public.map_votes add column if not exists updated_at timestamptz not null default now();
+
+alter table public.map_votes drop constraint if exists map_votes_option_key_check;
+alter table public.map_votes add constraint map_votes_option_key_check
+check (option_key in ('option_1','option_2','option_3','option_4','option_5','option_6'));
+
+alter table public.map_votes enable row level security;
+
+drop policy if exists "Anyone can read map votes" on public.map_votes;
+drop policy if exists "Users can insert their vote" on public.map_votes;
+drop policy if exists "Users can update their vote" on public.map_votes;
+drop policy if exists "Users/admins can delete map votes" on public.map_votes;
+
+create policy "Anyone can read map votes"
+on public.map_votes
+for select
+to anon, authenticated
+using (true);
+
+create policy "Users can insert their vote"
+on public.map_votes
+for insert
+to authenticated
+with check (owner_id = auth.uid());
+
+create policy "Users can update their vote"
+on public.map_votes
+for update
+to authenticated
+using (owner_id = auth.uid() or public.is_admin())
+with check (owner_id = auth.uid() or public.is_admin());
+
+create policy "Users/admins can delete map votes"
+on public.map_votes
+for delete
+to authenticated
+using (owner_id = auth.uid() or public.is_admin());
+
+grant select on public.map_votes to anon, authenticated;
+grant insert, update, delete on public.map_votes to authenticated;
+
+-- Make sure your admin email is allowed. You can run this as-is for this project.
+insert into public.admin_users (email)
+values ('jordantj333@gmail.com')
+on conflict (email) do nothing;

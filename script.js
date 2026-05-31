@@ -95,6 +95,7 @@ function publicSupabaseConfigured() {
 
 function applySiteSettings(rawSettings) {
   if (rawSettings) {
+    window.__FEMALE_EMX_RAW_SETTINGS = rawSettings;
     SITE_SETTINGS = {
       ...SITE_SETTINGS,
       brandName: rawSettings.brand_name || SITE_SETTINGS.brandName,
@@ -189,6 +190,38 @@ async function loadSiteSettings() {
   } catch (error) {
     console.warn("Site settings unavailable:", error);
   }
+}
+
+function subscribeToSiteSettings() {
+  if (!publicSupabaseConfigured()) return;
+
+  settingsClient = settingsClient || window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false
+    }
+  });
+
+  settingsClient
+    .channel("female-emx-site-settings-live-v3")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "site_settings",
+        filter: "id=eq." + CONFIG.settingsId
+      },
+      (payload) => {
+        if (payload && payload.new) {
+          applySiteSettings(payload.new);
+          window.dispatchEvent(new CustomEvent("female-emx-raw-settings-updated", { detail: payload.new }));
+          if (typeof showToast === "function") showToast("Live update applied.");
+        }
+      }
+    )
+    .subscribe();
 }
 
 if (creatorCodeText) creatorCodeText.textContent = CONFIG.creatorCode;
@@ -1076,6 +1109,243 @@ if (logoTap) {
 })();
 
 loadSiteSettings();
+subscribeToSiteSettings();
 setupExternalLinks();
 setDailyChallenge();
 updateHype();
+initAdminV2PublicExtras();
+
+
+/* ADMIN V2 PUBLIC EXTRAS: announcement, featured clip, top fans, map voting */
+function initAdminV2PublicExtras() {
+  const announcementBar = document.getElementById("announcementBar");
+  const announcementText = document.getElementById("announcementText");
+  const featuredClipSection = document.getElementById("featuredClipSection");
+  const featuredClipLink = document.getElementById("featuredClipLink");
+  const topFansSection = document.getElementById("topFansSection");
+  const topFansList = document.getElementById("topFansList");
+  const voteSection = document.getElementById("mapVoteSection");
+  const voteQuestionText = document.getElementById("voteQuestionText");
+  const voteOptionsEl = document.getElementById("voteOptions");
+  const voteResultsEl = document.getElementById("voteResults");
+
+  let publicClient = null;
+  let publicUser = null;
+  let extrasSettings = null;
+
+  const fallbackSettings = {
+    announcement_enabled: false,
+    announcement_text: "",
+    show_featured_clip: true,
+    featured_clip_url: "",
+    show_leaderboard: true,
+    vote_enabled: true,
+    vote_question: "What map should Female EMX make next?",
+    vote_option_1: "Zone Wars",
+    vote_option_2: "Box Fights",
+    vote_option_3: "1v1 Map",
+    vote_option_4: "Deathrun",
+    vote_option_5: "Aim/Edit Practice",
+    vote_option_6: "Fashion Map"
+  };
+
+  function configured() {
+    return publicSupabaseConfigured && publicSupabaseConfigured();
+  }
+
+  function client() {
+    if (!configured()) return null;
+    publicClient = publicClient || window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+    });
+    return publicClient;
+  }
+
+  async function ensureAnon() {
+    const c = client();
+    if (!c) return null;
+    const session = await c.auth.getSession();
+    if (session?.data?.session?.user) {
+      publicUser = session.data.session.user;
+      return publicUser;
+    }
+    const res = await c.auth.signInAnonymously();
+    if (res.error) {
+      console.warn("Vote anonymous auth failed", res.error);
+      return null;
+    }
+    publicUser = res.data.user;
+    return publicUser;
+  }
+
+  function optionList() {
+    const s = extrasSettings || fallbackSettings;
+    return [1,2,3,4,5,6].map((n) => ({ key: "option_" + n, label: s["vote_option_" + n] || "" })).filter((x) => x.label.trim());
+  }
+
+  async function loadExtrasSettings() {
+    const c = client();
+    extrasSettings = { ...fallbackSettings };
+    if (c) {
+      const { data, error } = await c.from("site_settings").select("*").eq("id", CONFIG.settingsId).maybeSingle();
+      if (!error && data) extrasSettings = { ...extrasSettings, ...data };
+    }
+    applyExtrasSettings();
+  }
+
+  function applyExtrasSettings() {
+    const s = extrasSettings || fallbackSettings;
+
+    if (announcementBar && announcementText) {
+      announcementBar.classList.toggle("hidden", !(s.announcement_enabled && String(s.announcement_text || "").trim()));
+      announcementText.textContent = s.announcement_text || "";
+    }
+
+    if (featuredClipSection && featuredClipLink) {
+      const clip = String(s.featured_clip_url || "").trim();
+      featuredClipSection.classList.toggle("hidden", !(s.show_featured_clip !== false && clip));
+      if (clip) {
+        featuredClipLink.href = clip;
+        featuredClipLink.dataset.url = clip;
+      }
+    }
+
+    if (topFansSection) topFansSection.classList.toggle("hidden", s.show_leaderboard === false);
+    if (voteSection) voteSection.classList.toggle("hidden", s.vote_enabled === false);
+    if (voteQuestionText) voteQuestionText.textContent = s.vote_question || fallbackSettings.vote_question;
+
+    renderVoteButtons();
+  }
+
+  function renderVoteButtons() {
+    if (!voteOptionsEl) return;
+    const votedKey = localStorage.getItem("femaleEmxVoteKey") || "";
+    voteOptionsEl.textContent = "";
+    optionList().forEach((option) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "vote-btn" + (votedKey === option.key ? " voted" : "");
+      btn.dataset.voteKey = option.key;
+      btn.textContent = (votedKey === option.key ? "✓ " : "") + option.label;
+      voteOptionsEl.appendChild(btn);
+    });
+  }
+
+  function renderVoteResults(rows) {
+    if (!voteResultsEl) return;
+    const options = optionList();
+    const counts = Object.fromEntries(options.map((o) => [o.key, 0]));
+    (rows || []).forEach((row) => {
+      if (counts[row.option_key] !== undefined) counts[row.option_key] += 1;
+    });
+    const total = Object.values(counts).reduce((a,b) => a + b, 0);
+    voteResultsEl.textContent = "";
+    options.forEach((option) => {
+      const count = counts[option.key] || 0;
+      const percent = total ? Math.round((count / total) * 100) : 0;
+      const row = document.createElement("div");
+      row.className = "vote-result-row";
+      row.innerHTML = `
+        <div class="vote-result-top"><span>${option.label}</span><span>${count} votes · ${percent}%</span></div>
+        <div class="vote-bar"><div class="vote-bar-fill" style="width:${percent}%"></div></div>
+      `;
+      voteResultsEl.appendChild(row);
+    });
+  }
+
+  async function loadVotes() {
+    const c = client();
+    if (!c || !voteResultsEl) return;
+    const { data, error } = await c.from("map_votes").select("option_key");
+    if (error) {
+      console.warn("Vote load error", error);
+      voteResultsEl.textContent = "Votes unavailable.";
+      return;
+    }
+    renderVoteResults(data || []);
+  }
+
+  async function submitVote(optionKey) {
+    const s = extrasSettings || fallbackSettings;
+    if (s.vote_enabled === false) {
+      showToast("Voting is paused right now.");
+      return;
+    }
+    const c = client();
+    if (!c) {
+      localStorage.setItem("femaleEmxVoteKey", optionKey);
+      renderVoteButtons();
+      showToast("Demo vote saved on this phone.");
+      return;
+    }
+    const user = await ensureAnon();
+    if (!user) {
+      showToast("Vote sign-in failed. Enable anonymous sign-ins.");
+      return;
+    }
+    const { error } = await c.from("map_votes").upsert({ owner_id: user.id, option_key: optionKey }, { onConflict: "owner_id" });
+    if (error) {
+      console.warn("Vote save error", error);
+      showToast("Vote failed. Run the Admin V2 SQL.");
+      return;
+    }
+    localStorage.setItem("femaleEmxVoteKey", optionKey);
+    renderVoteButtons();
+    showToast("Vote saved 💜");
+    loadVotes();
+  }
+
+  async function loadTopFans() {
+    const c = client();
+    if (!c || !topFansList) return;
+    const { data, error } = await c
+      .from("fan_wall")
+      .select("username, hearts, bolts, fires, crowns, wins, controllers, hidden, reports")
+      .eq("hidden", false)
+      .lt("reports", 3)
+      .limit(200);
+    if (error) {
+      console.warn("Top fans error", error);
+      topFansList.textContent = "Top fans unavailable.";
+      return;
+    }
+    const scores = new Map();
+    (data || []).forEach((item) => {
+      const username = item.username || "@fan";
+      const score = ["hearts","bolts","fires","crowns","wins","controllers"].reduce((sum, k) => sum + Number(item[k] || 0), 0);
+      scores.set(username, (scores.get(username) || 0) + score);
+    });
+    const top = [...scores.entries()].sort((a,b) => b[1] - a[1]).filter((x) => x[1] > 0).slice(0, 5);
+    topFansList.textContent = "";
+    if (!top.length) {
+      topFansList.textContent = "React to comments to build the leaderboard.";
+      return;
+    }
+    top.forEach(([username, score], index) => {
+      const row = document.createElement("div");
+      row.className = "top-fan-row";
+      row.innerHTML = `<div><span class="top-fan-rank">${index + 1}</span><span class="top-fan-name">${username}</span></div><div class="top-fan-score">${score} reactions</div>`;
+      topFansList.appendChild(row);
+    });
+  }
+
+  if (voteOptionsEl) {
+    voteOptionsEl.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-vote-key]");
+      if (!btn) return;
+      submitVote(btn.dataset.voteKey);
+    });
+  }
+
+  window.addEventListener("female-emx-raw-settings-updated", (event) => {
+    extrasSettings = { ...fallbackSettings, ...(event.detail || {}) };
+    applyExtrasSettings();
+    loadVotes();
+    loadTopFans();
+  });
+
+  loadExtrasSettings().then(() => {
+    loadVotes();
+    loadTopFans();
+  });
+}

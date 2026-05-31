@@ -13,7 +13,7 @@
 
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=admin-control1">
+  <link rel="stylesheet" href="styles.css?v=adminv2">
 
   <title>Female EMX</title>
 </head>
@@ -51,6 +51,12 @@
   </button>
 
   <main class="app">
+
+    <section class="announcement-bar hidden" id="announcementBar" aria-label="Announcement">
+      <span>⚡</span>
+      <p id="announcementText">New updates will show here.</p>
+    </section>
+
     <section class="hero" aria-label="Female EMX profile">
       <div class="logo-shell" id="logoTap" title="Tap 5 times for secret mode">
         <img class="logo" src="image.png" alt="Female EMX logo" width="166" height="166" decoding="async">
@@ -233,6 +239,38 @@
         </div>
       </article>
 
+
+      <article class="feature wide hidden" id="featuredClipSection">
+        <p class="section-label">Featured Clip</p>
+        <h2>Clip of the Week</h2>
+        <p>Watch the latest Female EMX clip and send her some love.</p>
+        <div class="feature-actions">
+          <a
+            id="featuredClipLink"
+            class="mini-btn external-link"
+            href="#"
+            data-url="#"
+          >
+            Watch Featured Clip
+          </a>
+        </div>
+      </article>
+
+      <article class="feature wide hidden" id="mapVoteSection">
+        <p class="section-label">Fan Vote</p>
+        <h2 id="voteQuestionText">What map should Female EMX make next?</h2>
+        <p>Vote once, then check which map idea is winning.</p>
+        <div class="vote-options" id="voteOptions"></div>
+        <div class="vote-results" id="voteResults">Loading votes...</div>
+      </article>
+
+      <article class="feature wide hidden" id="topFansSection">
+        <p class="section-label">Leaderboard</p>
+        <h2>Top Fans</h2>
+        <p>The fans getting the most reactions on their comments show up here.</p>
+        <div class="top-fans-list" id="topFansList">Loading top fans...</div>
+      </article>
+
       <article class="feature wide convo-wall" id="convoWall">
         <p class="section-label">Fans</p>
 
@@ -362,6 +400,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="script.js?v=admin-control1"></script>
+  <script src="script.js?v=adminv2"></script>
 </body>
 </html>
