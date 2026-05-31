@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="Female EMX Admin">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <link rel="stylesheet" href="admin.css?v=password2">
+  <link rel="stylesheet" href="admin.css?v=password5">
 
   <title>Female EMX Admin</title>
 </head>
@@ -39,28 +39,32 @@
         Sign in with your approved admin email and password. No email link needed.
       </p>
 
-      <label for="emailInput">Email</label>
-      <input
-        id="emailInput"
-        type="email"
-        placeholder="jordantj333@gmail.com"
-        autocomplete="email"
-      >
+      <form id="loginForm">
+        <label for="emailInput">Email</label>
+        <input
+          id="emailInput"
+          type="email"
+          placeholder="jordantj333@gmail.com"
+          autocomplete="email"
+          required
+        >
 
-      <label for="passwordInput">Password</label>
-      <input
-        id="passwordInput"
-        type="password"
-        placeholder="Admin password"
-        autocomplete="current-password"
-      >
+        <label for="passwordInput">Password</label>
+        <input
+          id="passwordInput"
+          type="password"
+          placeholder="Admin password"
+          autocomplete="current-password"
+          required
+        >
 
-      <button class="mini-btn" id="loginBtn" type="button">
-        Login
-      </button>
+        <button class="mini-btn" id="loginBtn" type="submit">
+          Login
+        </button>
+      </form>
 
-      <p class="help-text">
-        First time setup: create this user in Supabase Authentication → Users, then add the email to admin_users.
+      <p class="help-text" id="loginStatus">
+        Ready. Use the admin user created in Supabase Authentication → Users.
       </p>
     </section>
 
@@ -217,6 +221,6 @@
   <div class="admin-toast" id="adminToast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin.js?v=password2"></script>
+  <script src="admin.js?v=password5"></script>
 </body>
 </html>

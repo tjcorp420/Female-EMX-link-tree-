@@ -1,8 +1,7 @@
 const ADMIN_CONFIG = {
   supabaseUrl: "https://iosbgyokkfoaaawwqqqb.supabase.co",
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlvc2JneW9ra2ZvYWFhd3dxcXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxOTMxMzIsImV4cCI6MjA5NTc2OTEzMn0.6xBFuHlvrhXyss9xzKCVH5CmrYdopSRAw0JoVbQ5mDE",
-  settingsId: "main",
-  redirectUrl: "https://female-emx-link-tree.vercel.app/admin.html"
+  settingsId: "main"
 };
 
 const db = window.supabase.createClient(
@@ -19,40 +18,7 @@ const db = window.supabase.createClient(
 
 const $ = (id) => document.getElementById(id);
 
-const loginCard = $("loginCard");
-const lockedCard = $("lockedCard");
-const adminPanel = $("adminPanel");
-const adminToast = $("adminToast");
-const emailInput = $("emailInput");
-const sendLoginBtn = $("sendLoginBtn");
-const signOutBtn = $("signOutBtn");
-const signOutFromLockedBtn = $("signOutFromLockedBtn");
-const adminEmail = $("adminEmail");
-const lockedText = $("lockedText");
-
-const brandNameInput = $("brandNameInput");
-const creatorCodeInput = $("creatorCodeInput");
-const statusBadgeInput = $("statusBadgeInput");
-const backgroundModeInput = $("backgroundModeInput");
-const primaryColorInput = $("primaryColorInput");
-const secondaryColorInput = $("secondaryColorInput");
-const taglineInput = $("taglineInput");
-const pinnedMessageInput = $("pinnedMessageInput");
-const tiktokUrlInput = $("tiktokUrlInput");
-const emxTweaksUrlInput = $("emxTweaksUrlInput");
-const fortniteMapsUrlInput = $("fortniteMapsUrlInput");
-const featuredClipUrlInput = $("featuredClipUrlInput");
-const questionOfWeekInput = $("questionOfWeekInput");
-const commentsEnabledInput = $("commentsEnabledInput");
-const reactionsEnabledInput = $("reactionsEnabledInput");
-const saveSettingsBtn = $("saveSettingsBtn");
-
-const refreshCommentsBtn = $("refreshCommentsBtn");
-const commentFilter = $("commentFilter");
-const commentList = $("commentList");
-
 let currentUser = null;
-let currentAdminEmail = "";
 
 const DEFAULT_SETTINGS = {
   id: "main",
@@ -74,6 +40,7 @@ const DEFAULT_SETTINGS = {
 };
 
 function showToast(message) {
+  const adminToast = $("adminToast");
   if (!adminToast) return;
 
   adminToast.textContent = message;
@@ -85,7 +52,16 @@ function showToast(message) {
   }, 1900);
 }
 
+function setLoginStatus(message) {
+  const loginStatus = $("loginStatus");
+  if (loginStatus) loginStatus.textContent = message;
+}
+
 function showOnly(view) {
+  const loginCard = $("loginCard");
+  const lockedCard = $("lockedCard");
+  const adminPanel = $("adminPanel");
+
   if (loginCard) loginCard.classList.toggle("hidden", view !== "login");
   if (lockedCard) lockedCard.classList.toggle("hidden", view !== "locked");
   if (adminPanel) adminPanel.classList.toggle("hidden", view !== "admin");
@@ -95,9 +71,7 @@ function cleanUrl(value) {
   const trimmed = String(value || "").trim();
 
   if (!trimmed) return "";
-  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) {
-    return trimmed;
-  }
+  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) return trimmed;
 
   return "https://" + trimmed;
 }
@@ -119,50 +93,74 @@ function timeAgo(dateString) {
   return Math.floor(diff / 86400) + "d ago";
 }
 
-async function sendLoginLink() {
-  const email = emailInput.value.trim().toLowerCase();
-  
+async function loginWithPassword() {
+  const emailInput = $("emailInput");
+  const passwordInput = $("passwordInput");
+  const loginBtn = $("loginBtn");
+
+  const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
+  const password = passwordInput ? passwordInput.value : "";
+
+  showToast("Checking login...");
+  setLoginStatus("Checking login...");
+
+  if (!window.supabase) {
+    showToast("Supabase script not loaded.");
+    setLoginStatus("Supabase script not loaded.");
+    return;
+  }
+
   if (!email || !email.includes("@")) {
-    showToast("Enter your admin email first.");
+    showToast("Enter your admin email.");
+    setLoginStatus("Enter your admin email.");
     return;
   }
-  
-  sendLoginBtn.disabled = true;
-  
-  const redirectTo = "https://female-emx-link-tree.vercel.app/admin.html";
-  
-  const { error } = await db.auth.signInWithOtp({
+
+  if (!password || password.length < 6) {
+    showToast("Enter your admin password.");
+    setLoginStatus("Enter your admin password.");
+    return;
+  }
+
+  if (loginBtn) loginBtn.disabled = true;
+
+  const { data, error } = await db.auth.signInWithPassword({
     email,
-    options: {
-      emailRedirectTo: redirectTo,
-      shouldCreateUser: true
-    }
+    password
   });
-  
-  sendLoginBtn.disabled = false;
-  
+
+  if (loginBtn) loginBtn.disabled = false;
+
   if (error) {
-    console.error("Login link error:", error);
-    showToast(error.message || "Login link failed.");
+    console.error("Password login error:", error);
+    showToast(error.message || "Login failed.");
+    setLoginStatus(error.message || "Login failed.");
     return;
   }
-  
-  showToast("Login link sent. Check your email.");
+
+  currentUser = data?.user || null;
+
+  showToast("Logged in.");
+  setLoginStatus("Logged in. Loading admin panel...");
+
+  await boot();
 }
 
 async function signOut() {
   await db.auth.signOut();
 
   currentUser = null;
-  currentAdminEmail = "";
+
+  const passwordInput = $("passwordInput");
+  if (passwordInput) passwordInput.value = "";
 
   showOnly("login");
+  setLoginStatus("Signed out.");
   showToast("Signed out.");
 }
 
 async function checkAdminAccess(user) {
   const email = String(user?.email || "").toLowerCase();
-  currentAdminEmail = email;
 
   if (!email) return false;
 
@@ -174,6 +172,7 @@ async function checkAdminAccess(user) {
 
   if (error) {
     console.error("Admin check error:", error);
+    showToast("Admin check failed.");
     return false;
   }
 
@@ -187,7 +186,8 @@ async function boot() {
 
   if (error) {
     console.error("Session error:", error);
-    showToast("Login session error. Try sending a new link.");
+    showToast("Session error. Login again.");
+    setLoginStatus("Session error. Login again.");
     showOnly("login");
     return;
   }
@@ -196,12 +196,15 @@ async function boot() {
 
   if (!currentUser) {
     showOnly("login");
+    setLoginStatus("Ready. Enter your email and password.");
     return;
   }
 
   const allowed = await checkAdminAccess(currentUser);
 
   if (!allowed) {
+    const lockedText = $("lockedText");
+
     if (lockedText) {
       lockedText.textContent =
         "Signed in as " +
@@ -213,11 +216,11 @@ async function boot() {
     return;
   }
 
-  if (adminEmail) {
-    adminEmail.textContent = currentUser.email || "Admin";
-  }
+  const adminEmail = $("adminEmail");
+  if (adminEmail) adminEmail.textContent = currentUser.email || "Admin";
 
   showOnly("admin");
+
   await loadSettings();
   await loadComments();
 }
@@ -243,6 +246,22 @@ async function loadSettings() {
 }
 
 function fillSettings(settings) {
+  const brandNameInput = $("brandNameInput");
+  const creatorCodeInput = $("creatorCodeInput");
+  const statusBadgeInput = $("statusBadgeInput");
+  const backgroundModeInput = $("backgroundModeInput");
+  const primaryColorInput = $("primaryColorInput");
+  const secondaryColorInput = $("secondaryColorInput");
+  const taglineInput = $("taglineInput");
+  const pinnedMessageInput = $("pinnedMessageInput");
+  const tiktokUrlInput = $("tiktokUrlInput");
+  const emxTweaksUrlInput = $("emxTweaksUrlInput");
+  const fortniteMapsUrlInput = $("fortniteMapsUrlInput");
+  const featuredClipUrlInput = $("featuredClipUrlInput");
+  const questionOfWeekInput = $("questionOfWeekInput");
+  const commentsEnabledInput = $("commentsEnabledInput");
+  const reactionsEnabledInput = $("reactionsEnabledInput");
+
   if (brandNameInput) brandNameInput.value = settings.brand_name || DEFAULT_SETTINGS.brand_name;
   if (creatorCodeInput) creatorCodeInput.value = settings.creator_code || DEFAULT_SETTINGS.creator_code;
   if (statusBadgeInput) statusBadgeInput.value = settings.status_badge || DEFAULT_SETTINGS.status_badge;
@@ -256,17 +275,28 @@ function fillSettings(settings) {
   if (fortniteMapsUrlInput) fortniteMapsUrlInput.value = settings.fortnite_maps_url || DEFAULT_SETTINGS.fortnite_maps_url;
   if (featuredClipUrlInput) featuredClipUrlInput.value = settings.featured_clip_url || "";
   if (questionOfWeekInput) questionOfWeekInput.value = settings.question_of_week || "";
-
-  if (commentsEnabledInput) {
-    commentsEnabledInput.checked = settings.comments_enabled !== false;
-  }
-
-  if (reactionsEnabledInput) {
-    reactionsEnabledInput.checked = settings.reactions_enabled !== false;
-  }
+  if (commentsEnabledInput) commentsEnabledInput.checked = settings.comments_enabled !== false;
+  if (reactionsEnabledInput) reactionsEnabledInput.checked = settings.reactions_enabled !== false;
 }
 
 async function saveSettings() {
+  const brandNameInput = $("brandNameInput");
+  const creatorCodeInput = $("creatorCodeInput");
+  const statusBadgeInput = $("statusBadgeInput");
+  const backgroundModeInput = $("backgroundModeInput");
+  const primaryColorInput = $("primaryColorInput");
+  const secondaryColorInput = $("secondaryColorInput");
+  const taglineInput = $("taglineInput");
+  const pinnedMessageInput = $("pinnedMessageInput");
+  const tiktokUrlInput = $("tiktokUrlInput");
+  const emxTweaksUrlInput = $("emxTweaksUrlInput");
+  const fortniteMapsUrlInput = $("fortniteMapsUrlInput");
+  const featuredClipUrlInput = $("featuredClipUrlInput");
+  const questionOfWeekInput = $("questionOfWeekInput");
+  const commentsEnabledInput = $("commentsEnabledInput");
+  const reactionsEnabledInput = $("reactionsEnabledInput");
+  const saveSettingsBtn = $("saveSettingsBtn");
+
   const settings = {
     id: ADMIN_CONFIG.settingsId,
     brand_name: brandNameInput.value.trim() || DEFAULT_SETTINGS.brand_name,
@@ -287,13 +317,13 @@ async function saveSettings() {
     updated_at: new Date().toISOString()
   };
 
-  saveSettingsBtn.disabled = true;
+  if (saveSettingsBtn) saveSettingsBtn.disabled = true;
 
   const { error } = await db
     .from("site_settings")
     .upsert(settings, { onConflict: "id" });
 
-  saveSettingsBtn.disabled = false;
+  if (saveSettingsBtn) saveSettingsBtn.disabled = false;
 
   if (error) {
     console.error("Settings save error:", error);
@@ -305,6 +335,9 @@ async function saveSettings() {
 }
 
 async function loadComments() {
+  const commentList = $("commentList");
+  const commentFilter = $("commentFilter");
+
   if (!commentList) return;
 
   commentList.innerHTML = '<div class="admin-comment">Loading comments...</div>';
@@ -317,17 +350,9 @@ async function loadComments() {
 
   const filter = commentFilter ? commentFilter.value : "all";
 
-  if (filter === "reported") {
-    query = query.gt("reports", 0);
-  }
-
-  if (filter === "hidden") {
-    query = query.eq("hidden", true);
-  }
-
-  if (filter === "visible") {
-    query = query.eq("hidden", false).lt("reports", 3);
-  }
+  if (filter === "reported") query = query.gt("reports", 0);
+  if (filter === "hidden") query = query.eq("hidden", true);
+  if (filter === "visible") query = query.eq("hidden", false).lt("reports", 3);
 
   const { data, error } = await query;
 
@@ -341,6 +366,8 @@ async function loadComments() {
 }
 
 function renderComments(items) {
+  const commentList = $("commentList");
+
   if (!commentList) return;
 
   commentList.textContent = "";
@@ -395,6 +422,9 @@ function renderComments(items) {
 }
 
 function findCachedComment(id) {
+  const commentList = $("commentList");
+  if (!commentList) return null;
+
   const pinButtons = [...commentList.querySelectorAll("[data-pin]")];
   const pinButton = pinButtons.find((button) => button.dataset.pin === id);
 
@@ -413,8 +443,10 @@ function findCachedComment(id) {
 }
 
 async function pinComment(id) {
+  const pinnedMessageInput = $("pinnedMessageInput");
   const item = findCachedComment(id);
-  if (!item) return;
+
+  if (!pinnedMessageInput || !item) return;
 
   pinnedMessageInput.value =
     `<strong>${escapeHtml(item.user)}</strong>: ${escapeHtml(item.message)}`;
@@ -473,65 +505,87 @@ async function deleteComment(id) {
   loadComments();
 }
 
-if (sendLoginBtn) {
-  sendLoginBtn.addEventListener("click", sendLoginLink);
-}
+function wireEvents() {
+  const loginForm = $("loginForm");
+  const loginBtn = $("loginBtn");
+  const emailInput = $("emailInput");
+  const passwordInput = $("passwordInput");
+  const signOutBtn = $("signOutBtn");
+  const signOutFromLockedBtn = $("signOutFromLockedBtn");
+  const saveSettingsBtn = $("saveSettingsBtn");
+  const refreshCommentsBtn = $("refreshCommentsBtn");
+  const commentFilter = $("commentFilter");
+  const commentList = $("commentList");
 
-if (signOutBtn) {
-  signOutBtn.addEventListener("click", signOut);
-}
-
-if (signOutFromLockedBtn) {
-  signOutFromLockedBtn.addEventListener("click", signOut);
-}
-
-if (saveSettingsBtn) {
-  saveSettingsBtn.addEventListener("click", saveSettings);
-}
-
-if (refreshCommentsBtn) {
-  refreshCommentsBtn.addEventListener("click", loadComments);
-}
-
-if (commentFilter) {
-  commentFilter.addEventListener("change", loadComments);
-}
-
-if (commentList) {
-  commentList.addEventListener("click", (event) => {
-    const pin = event.target.closest("[data-pin]");
-    const hide = event.target.closest("[data-hide]");
-    const reset = event.target.closest("[data-reset]");
-    const del = event.target.closest("[data-delete]");
-
-    if (pin) {
-      pinComment(pin.dataset.pin);
-      return;
-    }
-
-    if (hide) {
-      const card = hide.closest(".admin-comment");
-      toggleHidden(hide.dataset.hide, !card.classList.contains("hidden-comment"));
-      return;
-    }
-
-    if (reset) {
-      resetReports(reset.dataset.reset);
-      return;
-    }
-
-    if (del) {
-      deleteComment(del.dataset.delete);
-    }
-  });
-}
-
-db.auth.onAuthStateChange((_event, session) => {
-  currentUser = session?.user || null;
-
-  if (currentUser) {
-    boot();
+  if (loginForm) {
+    loginForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      loginWithPassword();
+    });
   }
-});
 
-window.addEventListener("load", boot);
+  if (loginBtn) {
+    loginBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      loginWithPassword();
+    });
+  }
+
+  if (emailInput) {
+    emailInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && passwordInput) {
+        event.preventDefault();
+        passwordInput.focus();
+      }
+    });
+  }
+
+  if (passwordInput) {
+    passwordInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        loginWithPassword();
+      }
+    });
+  }
+
+  if (signOutBtn) signOutBtn.addEventListener("click", signOut);
+  if (signOutFromLockedBtn) signOutFromLockedBtn.addEventListener("click", signOut);
+  if (saveSettingsBtn) saveSettingsBtn.addEventListener("click", saveSettings);
+  if (refreshCommentsBtn) refreshCommentsBtn.addEventListener("click", loadComments);
+  if (commentFilter) commentFilter.addEventListener("change", loadComments);
+
+  if (commentList) {
+    commentList.addEventListener("click", (event) => {
+      const pin = event.target.closest("[data-pin]");
+      const hide = event.target.closest("[data-hide]");
+      const reset = event.target.closest("[data-reset]");
+      const del = event.target.closest("[data-delete]");
+
+      if (pin) {
+        pinComment(pin.dataset.pin);
+        return;
+      }
+
+      if (hide) {
+        const card = hide.closest(".admin-comment");
+        toggleHidden(hide.dataset.hide, !card.classList.contains("hidden-comment"));
+        return;
+      }
+
+      if (reset) {
+        resetReports(reset.dataset.reset);
+        return;
+      }
+
+      if (del) {
+        deleteComment(del.dataset.delete);
+      }
+    });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  wireEvents();
+  boot();
+});
