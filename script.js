@@ -29,7 +29,7 @@ const IS_LOCAL_PREVIEW = (() => {
 
 /* Remove old service worker/cache one time so her phone stops opening old crashing files */
 (function clearOldCacheOnce() {
-  const cacheFlag = "femaleEmxClearedOldCacheV7";
+  const cacheFlag = "femaleEmxClearedOldCacheV8";
 
   if (localStorage.getItem(cacheFlag) === "yes") return;
   localStorage.setItem(cacheFlag, "yes");
@@ -68,6 +68,18 @@ const SITE_DEFAULTS = {
   tiktokUrl: "https://www.tiktok.com/@ttfemale_emx",
   emxTweaksUrl: "https://efect-macros-x-tweaks.vercel.app/",
   fortniteMapsUrl: "https://fortnite.gg/creator/medusaa",
+  logoUrl: "",
+  tiktokButtonTitle: "Watch on TikTok",
+  tiktokButtonSubtitle: "@ttfemale_emx",
+  emxButtonTitle: "EMX Tweaks x Macros",
+  emxButtonSubtitle: "Official EMX Vercel website",
+  fortniteButtonTitle: "Play My Fortnite Maps",
+  fortniteButtonSubtitle: "Female EMX maps on Fortnite.gg",
+  clipEnabled: false,
+  clipTitle: "Clip of the Week",
+  clipDescription: "Watch the latest Female EMX clip inside the app.",
+  clipVideoUrl: "",
+  clipPosterUrl: "",
   statusBadge: "Official Creator Hub",
   tagline: "TikTok clips, Fortnite maps, creator code, EMX links, and neon gamer energy in one place.",
   pinnedMessage: "Use creator code <strong>MEDUSAA</strong>, play the maps, and drop a comment below 💜⚡",
@@ -103,6 +115,18 @@ function applySiteSettings(rawSettings) {
       tiktokUrl: rawSettings.tiktok_url || SITE_SETTINGS.tiktokUrl,
       emxTweaksUrl: rawSettings.emx_tweaks_url || SITE_SETTINGS.emxTweaksUrl,
       fortniteMapsUrl: rawSettings.fortnite_maps_url || SITE_SETTINGS.fortniteMapsUrl,
+      logoUrl: rawSettings.logo_url || SITE_SETTINGS.logoUrl,
+      tiktokButtonTitle: rawSettings.tiktok_button_title || SITE_SETTINGS.tiktokButtonTitle,
+      tiktokButtonSubtitle: rawSettings.tiktok_button_subtitle || SITE_SETTINGS.tiktokButtonSubtitle,
+      emxButtonTitle: rawSettings.emx_button_title || SITE_SETTINGS.emxButtonTitle,
+      emxButtonSubtitle: rawSettings.emx_button_subtitle || SITE_SETTINGS.emxButtonSubtitle,
+      fortniteButtonTitle: rawSettings.fortnite_button_title || SITE_SETTINGS.fortniteButtonTitle,
+      fortniteButtonSubtitle: rawSettings.fortnite_button_subtitle || SITE_SETTINGS.fortniteButtonSubtitle,
+      clipEnabled: rawSettings.clip_enabled === true || rawSettings.show_featured_clip === true,
+      clipTitle: rawSettings.clip_title || SITE_SETTINGS.clipTitle,
+      clipDescription: rawSettings.clip_description || SITE_SETTINGS.clipDescription,
+      clipVideoUrl: rawSettings.clip_video_url || rawSettings.featured_clip_url || SITE_SETTINGS.clipVideoUrl,
+      clipPosterUrl: rawSettings.clip_poster_url || SITE_SETTINGS.clipPosterUrl,
       statusBadge: rawSettings.status_badge || SITE_SETTINGS.statusBadge,
       tagline: rawSettings.tagline || SITE_SETTINGS.tagline,
       pinnedMessage: rawSettings.pinned_message || SITE_SETTINGS.pinnedMessage,
@@ -136,6 +160,22 @@ function applySiteSettings(rawSettings) {
   const taglineText = document.getElementById("taglineText");
   const pinnedMessageText = document.getElementById("pinnedMessageText");
   const mapHubText = document.getElementById("mapHubText");
+
+  document.querySelectorAll("[data-logo-image]").forEach((img) => {
+    if (SITE_SETTINGS.logoUrl) img.src = SITE_SETTINGS.logoUrl;
+  });
+  const tiktokButtonTitle = document.getElementById("tiktokButtonTitle");
+  const tiktokButtonSubtitle = document.getElementById("tiktokButtonSubtitle");
+  const emxButtonTitle = document.getElementById("emxButtonTitle");
+  const emxButtonSubtitle = document.getElementById("emxButtonSubtitle");
+  const fortniteButtonTitle = document.getElementById("fortniteButtonTitle");
+  const fortniteButtonSubtitle = document.getElementById("fortniteButtonSubtitle");
+  if (tiktokButtonTitle) tiktokButtonTitle.textContent = SITE_SETTINGS.tiktokButtonTitle;
+  if (tiktokButtonSubtitle) tiktokButtonSubtitle.textContent = SITE_SETTINGS.tiktokButtonSubtitle;
+  if (emxButtonTitle) emxButtonTitle.textContent = SITE_SETTINGS.emxButtonTitle;
+  if (emxButtonSubtitle) emxButtonSubtitle.textContent = SITE_SETTINGS.emxButtonSubtitle;
+  if (fortniteButtonTitle) fortniteButtonTitle.textContent = SITE_SETTINGS.fortniteButtonTitle;
+  if (fortniteButtonSubtitle) fortniteButtonSubtitle.textContent = SITE_SETTINGS.fortniteButtonSubtitle;
 
   if (statusBadgeText) statusBadgeText.textContent = SITE_SETTINGS.statusBadge;
   if (taglineText) taglineText.textContent = SITE_SETTINGS.tagline;
@@ -1121,7 +1161,9 @@ function initAdminV2PublicExtras() {
   const announcementBar = document.getElementById("announcementBar");
   const announcementText = document.getElementById("announcementText");
   const featuredClipSection = document.getElementById("featuredClipSection");
-  const featuredClipLink = document.getElementById("featuredClipLink");
+  const openClipModalBtn = document.getElementById("openClipModalBtn");
+  const featuredClipTitleText = document.getElementById("featuredClipTitleText");
+  const featuredClipDescriptionText = document.getElementById("featuredClipDescriptionText");
   const topFansSection = document.getElementById("topFansSection");
   const topFansList = document.getElementById("topFansList");
   const voteSection = document.getElementById("mapVoteSection");
@@ -1138,6 +1180,11 @@ function initAdminV2PublicExtras() {
     announcement_text: "",
     show_featured_clip: true,
     featured_clip_url: "",
+    clip_enabled: false,
+    clip_title: "Clip of the Week",
+    clip_description: "Watch the latest Female EMX clip inside the app.",
+    clip_video_url: "",
+    clip_poster_url: "",
     show_leaderboard: true,
     vote_enabled: true,
     vote_question: "What map should Female EMX make next?",
@@ -1201,13 +1248,18 @@ function initAdminV2PublicExtras() {
       announcementText.textContent = s.announcement_text || "";
     }
 
-    if (featuredClipSection && featuredClipLink) {
-      const clip = String(s.featured_clip_url || "").trim();
-      featuredClipSection.classList.toggle("hidden", !(s.show_featured_clip !== false && clip));
-      if (clip) {
-        featuredClipLink.href = clip;
-        featuredClipLink.dataset.url = clip;
-      }
+    if (featuredClipSection) {
+      const clip = String(s.clip_video_url || s.featured_clip_url || "").trim();
+      const enabled = (s.clip_enabled === true || s.show_featured_clip !== false) && !!clip;
+      featuredClipSection.classList.toggle("hidden", !enabled);
+      if (featuredClipTitleText) featuredClipTitleText.textContent = s.clip_title || "Clip of the Week";
+      if (featuredClipDescriptionText) featuredClipDescriptionText.textContent = s.clip_description || "Watch the latest Female EMX clip inside the app.";
+      window.FEMALE_EMX_CLIP = {
+        title: s.clip_title || "Clip of the Week",
+        description: s.clip_description || "Watch the latest Female EMX clip inside the app.",
+        videoUrl: clip,
+        posterUrl: s.clip_poster_url || "image.png"
+      };
     }
 
     if (topFansSection) topFansSection.classList.toggle("hidden", s.show_leaderboard === false);
@@ -1349,3 +1401,90 @@ function initAdminV2PublicExtras() {
     loadTopFans();
   });
 }
+
+
+/* ADMIN V4 FEATURED CLIP MODAL PLAYER */
+function setupFeaturedClipModal() {
+  const modal = document.getElementById("clipModal");
+  const backdrop = document.getElementById("clipModalBackdrop");
+  const openBtn = document.getElementById("openClipModalBtn");
+  const closeBtn = document.getElementById("closeClipModalBtn");
+  const video = document.getElementById("clipVideo");
+  const playBtn = document.getElementById("clipPlayPauseBtn");
+  const seek = document.getElementById("clipSeekSlider");
+  const current = document.getElementById("clipCurrentTime");
+  const duration = document.getElementById("clipDuration");
+  const title = document.getElementById("clipModalTitle");
+  const desc = document.getElementById("clipModalDescription");
+
+  if (!modal || !openBtn || !video || !playBtn || !seek) return;
+
+  function fmt(seconds) {
+    if (!Number.isFinite(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
+    return mins + ":" + secs;
+  }
+
+  function updateTimes() {
+    current.textContent = fmt(video.currentTime);
+    duration.textContent = fmt(video.duration);
+    if (Number.isFinite(video.duration) && video.duration > 0) {
+      seek.value = Math.round((video.currentTime / video.duration) * 1000);
+    }
+    playBtn.textContent = video.paused ? "Play" : "Pause";
+  }
+
+  function openModal() {
+    const clip = window.FEMALE_EMX_CLIP || {};
+    if (!clip.videoUrl) {
+      showToast("No clip uploaded yet.");
+      return;
+    }
+    title.textContent = clip.title || "Clip of the Week";
+    desc.textContent = clip.description || "Watch the latest featured clip.";
+    video.poster = clip.posterUrl || "image.png";
+    if (video.src !== clip.videoUrl) {
+      video.src = clip.videoUrl;
+      video.load();
+    }
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+    video.play().catch(() => {
+      playBtn.textContent = "Play";
+    });
+    updateTimes();
+  }
+
+  function closeModal() {
+    video.pause();
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+    updateTimes();
+  }
+
+  openBtn.addEventListener("click", openModal);
+  closeBtn.addEventListener("click", closeModal);
+  if (backdrop) backdrop.addEventListener("click", closeModal);
+  playBtn.addEventListener("click", () => {
+    if (video.paused) video.play().catch(() => {});
+    else video.pause();
+    updateTimes();
+  });
+  seek.addEventListener("input", () => {
+    if (Number.isFinite(video.duration) && video.duration > 0) {
+      video.currentTime = (Number(seek.value) / 1000) * video.duration;
+    }
+  });
+  video.addEventListener("timeupdate", updateTimes);
+  video.addEventListener("loadedmetadata", updateTimes);
+  video.addEventListener("play", updateTimes);
+  video.addEventListener("pause", updateTimes);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.classList.contains("hidden")) closeModal();
+  });
+}
+
+setupFeaturedClipModal();

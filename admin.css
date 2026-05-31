@@ -298,3 +298,27 @@ input[type="color"] { padding: 4px; height: 46px; }
 @media (min-width: 680px) {
   .stats-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+
+/* ADMIN V4 MEDIA UPLOAD */
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.upload-card {
+  padding: 13px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.055);
+}
+.upload-card input[type="file"] {
+  width: 100%;
+  margin: 8px 0 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,.78);
+}
+.wrap-actions {
+  flex-wrap: wrap;
+}

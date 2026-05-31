@@ -56,3 +56,13 @@ https://female-emx-link-tree.vercel.app/admin.html?v=adminv3-live1
 
 IMPORTANT
 Do not paste a service_role key into any website file. The anon key is okay because RLS protects the database.
+
+
+ADMIN V4 MEDIA UPLOAD
+- Run supabase.sql again in Supabase SQL Editor.
+- Make sure your admin email is in public.admin_users.
+- Open /admin.html?v=adminv4-media1.
+- Go to Media tab, upload MP4/WebM clip and optional poster/logo.
+- Tap Apply Changes Live.
+- Public site opens the clip in a glass modal with close, play/pause, and seek slider.
+- Keep videos under 25MB for iPhone stability.

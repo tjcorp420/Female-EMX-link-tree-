@@ -331,3 +331,61 @@ grant insert, update, delete on public.map_votes to authenticated;
 insert into public.admin_users (email)
 values ('jordantj333@gmail.com')
 on conflict (email) do nothing;
+
+
+-- ADMIN V4 MEDIA + CUSTOM BRANDING UPGRADE
+alter table public.site_settings add column if not exists logo_url text not null default '';
+alter table public.site_settings add column if not exists tiktok_button_title text not null default 'Watch on TikTok';
+alter table public.site_settings add column if not exists tiktok_button_subtitle text not null default '@ttfemale_emx';
+alter table public.site_settings add column if not exists emx_button_title text not null default 'EMX Tweaks x Macros';
+alter table public.site_settings add column if not exists emx_button_subtitle text not null default 'Official EMX Vercel website';
+alter table public.site_settings add column if not exists fortnite_button_title text not null default 'Play My Fortnite Maps';
+alter table public.site_settings add column if not exists fortnite_button_subtitle text not null default 'Female EMX maps on Fortnite.gg';
+alter table public.site_settings add column if not exists clip_enabled boolean not null default false;
+alter table public.site_settings add column if not exists clip_title text not null default 'Clip of the Week';
+alter table public.site_settings add column if not exists clip_description text not null default 'Watch the latest Female EMX clip inside the app.';
+alter table public.site_settings add column if not exists clip_video_url text not null default '';
+alter table public.site_settings add column if not exists clip_poster_url text not null default '';
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'female-emx-media',
+  'female-emx-media',
+  true,
+  26214400,
+  array['video/mp4','video/webm','image/jpeg','image/png','image/webp']::text[]
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Public read Female EMX media" on storage.objects;
+drop policy if exists "Admins upload Female EMX media" on storage.objects;
+drop policy if exists "Admins update Female EMX media" on storage.objects;
+drop policy if exists "Admins delete Female EMX media" on storage.objects;
+
+create policy "Public read Female EMX media"
+on storage.objects
+for select
+to anon, authenticated
+using (bucket_id = 'female-emx-media');
+
+create policy "Admins upload Female EMX media"
+on storage.objects
+for insert
+to authenticated
+with check (bucket_id = 'female-emx-media' and public.is_admin());
+
+create policy "Admins update Female EMX media"
+on storage.objects
+for update
+to authenticated
+using (bucket_id = 'female-emx-media' and public.is_admin())
+with check (bucket_id = 'female-emx-media' and public.is_admin());
+
+create policy "Admins delete Female EMX media"
+on storage.objects
+for delete
+to authenticated
+using (bucket_id = 'female-emx-media' and public.is_admin());

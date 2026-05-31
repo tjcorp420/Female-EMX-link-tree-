@@ -7,7 +7,7 @@
   <meta name="description" content="Female EMX admin control panel.">
   <meta name="format-detection" content="telephone=no">
   <title>Female EMX Admin</title>
-  <link rel="stylesheet" href="admin.css?v=adminv3-live1">
+  <link rel="stylesheet" href="admin.css?v=adminv4-media1">
   <style>
     #loginForm { display:grid; gap:14px; position:relative; z-index:99; pointer-events:auto!important; }
     #loginForm label { margin-top:8px; }
@@ -65,6 +65,7 @@
       <nav class="admin-tabs" aria-label="Admin tabs">
         <button class="tab-btn active" type="button" data-tab="dashboardTab">Dashboard</button>
         <button class="tab-btn" type="button" data-tab="settingsTab">Settings</button>
+        <button class="tab-btn" type="button" data-tab="mediaTab">Media</button>
         <button class="tab-btn" type="button" data-tab="commentsTab">Comments</button>
         <button class="tab-btn" type="button" data-tab="votingTab">Voting</button>
         <button class="tab-btn" type="button" data-tab="previewTab">Preview</button>
@@ -122,6 +123,21 @@
             <label>Secondary Color <input id="secondaryColorInput" type="color" value="#62ff2e"></label>
           </div>
 
+
+
+          <div class="admin-subcard">
+            <p class="tiny-label">Header Logo + Button Names</p>
+            <label>Header Logo URL <input id="logoUrlInput" type="url" placeholder="Optional image URL"></label>
+            <div class="form-grid">
+              <label>TikTok Button Title <input id="tiktokButtonTitleInput" type="text" maxlength="40" placeholder="Watch on TikTok"></label>
+              <label>TikTok Button Subtitle <input id="tiktokButtonSubtitleInput" type="text" maxlength="55" placeholder="@ttfemale_emx"></label>
+              <label>EMX Button Title <input id="emxButtonTitleInput" type="text" maxlength="40" placeholder="EMX Tweaks x Macros"></label>
+              <label>EMX Button Subtitle <input id="emxButtonSubtitleInput" type="text" maxlength="55" placeholder="Official EMX Vercel website"></label>
+              <label>Fortnite Button Title <input id="fortniteButtonTitleInput" type="text" maxlength="40" placeholder="Play My Fortnite Maps"></label>
+              <label>Fortnite Button Subtitle <input id="fortniteButtonSubtitleInput" type="text" maxlength="55" placeholder="Female EMX maps on Fortnite.gg"></label>
+            </div>
+          </div>
+
           <label>Tagline <textarea id="taglineInput" rows="3" maxlength="180"></textarea></label>
           <label>Pinned Message <textarea id="pinnedMessageInput" rows="3" maxlength="260"></textarea></label>
 
@@ -129,7 +145,7 @@
             <label>TikTok URL <input id="tiktokUrlInput" type="url"></label>
             <label>EMX Tweaks URL <input id="emxTweaksUrlInput" type="url"></label>
             <label>Fortnite Maps URL <input id="fortniteMapsUrlInput" type="url"></label>
-            <label>Featured Clip URL <input id="featuredClipUrlInput" type="url" placeholder="Optional"></label>
+            <label>Clip Video URL <input id="featuredClipUrlInput" type="url" placeholder="Upload in Media tab or paste MP4 URL"></label>
           </div>
 
           <label>Question of the Week <input id="questionOfWeekInput" type="text" maxlength="120" placeholder="Optional"></label>
@@ -144,6 +160,57 @@
               <label class="switch-label"><input id="commentsEnabledInput" type="checkbox"> Comments Enabled</label>
               <label class="switch-label"><input id="reactionsEnabledInput" type="checkbox"> Reactions Enabled</label>
             </div>
+          </div>
+        </section>
+      </section>
+
+
+      <section class="tab-panel hidden" id="mediaTab">
+        <section class="admin-card">
+          <div class="section-head">
+            <div>
+              <p class="tiny-label">Video + Logo Uploads</p>
+              <h2>Clip of the Week</h2>
+            </div>
+            <button class="primary-btn small live-btn" id="applyMediaBtn" type="button">Apply Changes Live</button>
+          </div>
+
+          <p class="tiny">Upload your own MP4/WebM clip. Keep videos small for iPhone stability. After upload, tap Apply Changes Live.</p>
+
+          <div class="form-grid">
+            <label>Clip Title <input id="clipTitleInput" type="text" maxlength="60" placeholder="Clip of the Week"></label>
+            <label>Clip Poster URL <input id="clipPosterUrlInput" type="url" placeholder="Optional thumbnail image"></label>
+          </div>
+
+          <label>Clip Description <textarea id="clipDescriptionInput" rows="3" maxlength="180" placeholder="Watch the latest Female EMX clip inside the app."></textarea></label>
+          <label>Clip Video URL <input id="clipVideoUrlInput" type="url" placeholder="Upload video below or paste MP4 URL"></label>
+
+          <div class="upload-grid">
+            <div class="upload-card">
+              <p class="tiny-label">Upload Video</p>
+              <input id="clipVideoFileInput" type="file" accept="video/mp4,video/webm">
+              <button class="ghost-btn" id="uploadClipVideoBtn" type="button">Upload Video</button>
+            </div>
+            <div class="upload-card">
+              <p class="tiny-label">Upload Poster</p>
+              <input id="clipPosterFileInput" type="file" accept="image/png,image/jpeg,image/webp">
+              <button class="ghost-btn" id="uploadClipPosterBtn" type="button">Upload Poster</button>
+            </div>
+            <div class="upload-card">
+              <p class="tiny-label">Upload Header Logo</p>
+              <input id="logoFileInput" type="file" accept="image/png,image/jpeg,image/webp">
+              <button class="ghost-btn" id="uploadLogoBtn" type="button">Upload Logo</button>
+            </div>
+          </div>
+
+          <div class="switch-row">
+            <label class="switch-label"><input id="clipEnabledInput" type="checkbox"> Clip Modal Enabled</label>
+            <label class="switch-label"><input id="showFeaturedClipInputMedia" type="checkbox"> Show Featured Clip Card</label>
+          </div>
+
+          <div class="topbar-actions wrap-actions">
+            <button class="danger-btn" id="clearClipBtn" type="button">Clear Clip</button>
+            <span class="tiny" id="mediaUploadStatus">No upload running.</span>
           </div>
         </section>
       </section>
@@ -240,6 +307,13 @@
       tiktok_url: "https://www.tiktok.com/@ttfemale_emx",
       emx_tweaks_url: "https://efect-macros-x-tweaks.vercel.app/",
       fortnite_maps_url: "https://fortnite.gg/creator/medusaa",
+      logo_url: "",
+      tiktok_button_title: "Watch on TikTok",
+      tiktok_button_subtitle: "@ttfemale_emx",
+      emx_button_title: "EMX Tweaks x Macros",
+      emx_button_subtitle: "Official EMX Vercel website",
+      fortnite_button_title: "Play My Fortnite Maps",
+      fortnite_button_subtitle: "Female EMX maps on Fortnite.gg",
       status_badge: "Official Creator Hub",
       tagline: "TikTok clips, Fortnite maps, creator code, EMX links, and neon gamer energy in one place.",
       pinned_message: "Use creator code <strong>MEDUSAA</strong>, play the maps, and drop a comment below 💜⚡",
@@ -249,6 +323,11 @@
       comments_enabled: true,
       reactions_enabled: true,
       featured_clip_url: "",
+      clip_enabled: false,
+      clip_title: "Clip of the Week",
+      clip_description: "Watch the latest Female EMX clip inside the app.",
+      clip_video_url: "",
+      clip_poster_url: "",
       question_of_week: "What map should Female EMX make next?",
       announcement_enabled: false,
       announcement_text: "",
@@ -370,11 +449,24 @@
       $("tiktokUrlInput").value = s.tiktok_url || DEFAULT_SETTINGS.tiktok_url;
       $("emxTweaksUrlInput").value = s.emx_tweaks_url || DEFAULT_SETTINGS.emx_tweaks_url;
       $("fortniteMapsUrlInput").value = s.fortnite_maps_url || DEFAULT_SETTINGS.fortnite_maps_url;
-      $("featuredClipUrlInput").value = s.featured_clip_url || "";
+      $("logoUrlInput").value = s.logo_url || "";
+      $("tiktokButtonTitleInput").value = s.tiktok_button_title || DEFAULT_SETTINGS.tiktok_button_title;
+      $("tiktokButtonSubtitleInput").value = s.tiktok_button_subtitle || DEFAULT_SETTINGS.tiktok_button_subtitle;
+      $("emxButtonTitleInput").value = s.emx_button_title || DEFAULT_SETTINGS.emx_button_title;
+      $("emxButtonSubtitleInput").value = s.emx_button_subtitle || DEFAULT_SETTINGS.emx_button_subtitle;
+      $("fortniteButtonTitleInput").value = s.fortnite_button_title || DEFAULT_SETTINGS.fortnite_button_title;
+      $("fortniteButtonSubtitleInput").value = s.fortnite_button_subtitle || DEFAULT_SETTINGS.fortnite_button_subtitle;
+      $("featuredClipUrlInput").value = s.clip_video_url || s.featured_clip_url || "";
+      $("clipVideoUrlInput").value = s.clip_video_url || s.featured_clip_url || "";
+      $("clipTitleInput").value = s.clip_title || DEFAULT_SETTINGS.clip_title;
+      $("clipDescriptionInput").value = s.clip_description || DEFAULT_SETTINGS.clip_description;
+      $("clipPosterUrlInput").value = s.clip_poster_url || "";
+      $("clipEnabledInput").checked = s.clip_enabled === true || !!(s.clip_video_url || s.featured_clip_url);
       $("questionOfWeekInput").value = s.question_of_week || "";
       $("announcementEnabledInput").checked = s.announcement_enabled === true;
       $("announcementTextInput").value = s.announcement_text || "";
       $("showFeaturedClipInput").checked = s.show_featured_clip !== false;
+      if ($("showFeaturedClipInputMedia")) $("showFeaturedClipInputMedia").checked = s.show_featured_clip !== false;
       $("showLeaderboardInput").checked = s.show_leaderboard !== false;
       $("commentsEnabledInput").checked = s.comments_enabled !== false;
       $("reactionsEnabledInput").checked = s.reactions_enabled !== false;
@@ -397,11 +489,23 @@
         tiktok_url: cleanUrl($("tiktokUrlInput").value) || DEFAULT_SETTINGS.tiktok_url,
         emx_tweaks_url: cleanUrl($("emxTweaksUrlInput").value) || DEFAULT_SETTINGS.emx_tweaks_url,
         fortnite_maps_url: cleanUrl($("fortniteMapsUrlInput").value) || DEFAULT_SETTINGS.fortnite_maps_url,
-        featured_clip_url: cleanUrl($("featuredClipUrlInput").value),
+        logo_url: cleanUrl($("logoUrlInput").value),
+        tiktok_button_title: $("tiktokButtonTitleInput").value.trim() || DEFAULT_SETTINGS.tiktok_button_title,
+        tiktok_button_subtitle: $("tiktokButtonSubtitleInput").value.trim() || DEFAULT_SETTINGS.tiktok_button_subtitle,
+        emx_button_title: $("emxButtonTitleInput").value.trim() || DEFAULT_SETTINGS.emx_button_title,
+        emx_button_subtitle: $("emxButtonSubtitleInput").value.trim() || DEFAULT_SETTINGS.emx_button_subtitle,
+        fortnite_button_title: $("fortniteButtonTitleInput").value.trim() || DEFAULT_SETTINGS.fortnite_button_title,
+        fortnite_button_subtitle: $("fortniteButtonSubtitleInput").value.trim() || DEFAULT_SETTINGS.fortnite_button_subtitle,
+        featured_clip_url: cleanUrl($("clipVideoUrlInput").value || $("featuredClipUrlInput").value),
+        clip_enabled: $("clipEnabledInput").checked,
+        clip_title: $("clipTitleInput").value.trim() || DEFAULT_SETTINGS.clip_title,
+        clip_description: $("clipDescriptionInput").value.trim() || DEFAULT_SETTINGS.clip_description,
+        clip_video_url: cleanUrl($("clipVideoUrlInput").value || $("featuredClipUrlInput").value),
+        clip_poster_url: cleanUrl($("clipPosterUrlInput").value),
         question_of_week: $("questionOfWeekInput").value.trim(),
         announcement_enabled: $("announcementEnabledInput").checked,
         announcement_text: $("announcementTextInput").value.trim(),
-        show_featured_clip: $("showFeaturedClipInput").checked,
+        show_featured_clip: ($("showFeaturedClipInputMedia") ? $("showFeaturedClipInputMedia").checked : $("showFeaturedClipInput").checked),
         show_leaderboard: $("showLeaderboardInput").checked,
         comments_enabled: $("commentsEnabledInput").checked,
         reactions_enabled: $("reactionsEnabledInput").checked,
@@ -417,7 +521,7 @@
       };
     }
     async function saveSettings() {
-      const buttons = [$("saveSettingsBtn"), $("applyLiveTopBtn"), $("applyVoteSettingsBtn")].filter(Boolean);
+      const buttons = [$("saveSettingsBtn"), $("applyLiveTopBtn"), $("applyVoteSettingsBtn"), $("applyMediaBtn")].filter(Boolean);
       buttons.forEach((b) => b.disabled = true);
       const { error } = await db.from("site_settings").upsert(collectSettings(), { onConflict: "id" });
       buttons.forEach((b) => b.disabled = false);
@@ -560,10 +664,51 @@
       loadVotes();
     }
 
+
+
+    function safeFileName(name) {
+      return String(name || "file").toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/-+/g, "-").slice(0, 80);
+    }
+    function setMediaStatus(message) {
+      const el = $("mediaUploadStatus");
+      if (el) el.textContent = message;
+      showToast(message);
+    }
+    async function uploadMediaFile(inputId, urlInputId, folder, maxMB) {
+      const input = $(inputId);
+      const target = $(urlInputId);
+      if (!input || !input.files || !input.files[0]) { setMediaStatus("Choose a file first."); return; }
+      const file = input.files[0];
+      if (file.size > maxMB * 1024 * 1024) { setMediaStatus("File too large. Max " + maxMB + " MB."); return; }
+      setMediaStatus("Uploading " + file.name + "...");
+      const path = folder + "/" + Date.now() + "-" + safeFileName(file.name);
+      const { error } = await db.storage.from("female-emx-media").upload(path, file, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: file.type || undefined
+      });
+      if (error) { console.error("Upload error", error); setMediaStatus("Upload failed. Run the V4 SQL/storage setup."); return; }
+      const { data } = db.storage.from("female-emx-media").getPublicUrl(path);
+      if (target && data?.publicUrl) target.value = data.publicUrl;
+      if (urlInputId === "clipVideoUrlInput" && $("featuredClipUrlInput")) $("featuredClipUrlInput").value = data.publicUrl;
+      setMediaStatus("Upload complete. Tap Apply Changes Live.");
+      updatePreview();
+    }
+    function clearClipFields() {
+      if (!confirm("Clear featured clip fields?")) return;
+      ["featuredClipUrlInput","clipVideoUrlInput","clipPosterUrlInput"].forEach((id) => { if ($(id)) $(id).value = ""; });
+      if ($("clipEnabledInput")) $("clipEnabledInput").checked = false;
+      setMediaStatus("Clip cleared. Tap Apply Changes Live.");
+    }
+
     function wireEvents() {
       document.querySelectorAll(".tab-btn").forEach((btn) => btn.addEventListener("click", () => showTab(btn.dataset.tab)));
-      ["saveSettingsBtn","applyLiveTopBtn","applyVoteSettingsBtn"].forEach((id) => { const b=$(id); if (b) b.addEventListener("click", saveSettings); });
-      ["brandNameInput","creatorCodeInput","statusBadgeInput","backgroundModeInput","primaryColorInput","secondaryColorInput","taglineInput","pinnedMessageInput"].forEach((id) => { const el=$(id); if (el) el.addEventListener("input", updatePreview); });
+      ["saveSettingsBtn","applyLiveTopBtn","applyVoteSettingsBtn","applyMediaBtn"].forEach((id) => { const b=$(id); if (b) b.addEventListener("click", saveSettings); });
+      ["brandNameInput","creatorCodeInput","statusBadgeInput","backgroundModeInput","primaryColorInput","secondaryColorInput","taglineInput","pinnedMessageInput","logoUrlInput","clipTitleInput","clipDescriptionInput","clipVideoUrlInput","clipPosterUrlInput"].forEach((id) => { const el=$(id); if (el) el.addEventListener("input", updatePreview); });
+      if ($("uploadClipVideoBtn")) $("uploadClipVideoBtn").addEventListener("click", () => uploadMediaFile("clipVideoFileInput", "clipVideoUrlInput", "clips", 25));
+      if ($("uploadClipPosterBtn")) $("uploadClipPosterBtn").addEventListener("click", () => uploadMediaFile("clipPosterFileInput", "clipPosterUrlInput", "posters", 5));
+      if ($("uploadLogoBtn")) $("uploadLogoBtn").addEventListener("click", () => uploadMediaFile("logoFileInput", "logoUrlInput", "logos", 5));
+      if ($("clearClipBtn")) $("clearClipBtn").addEventListener("click", clearClipFields);
       $("refreshDashboardBtn").addEventListener("click", loadDashboard);
       $("refreshCommentsBtn").addEventListener("click", loadComments);
       $("refreshVotesBtn").addEventListener("click", loadVotes);
