@@ -9,6 +9,25 @@ const CONFIG = {
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlvc2JneW9ra2ZvYWFhd3dxcXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxOTMxMzIsImV4cCI6MjA5NTc2OTEzMn0.6xBFuHlvrhXyss9xzKCVH5CmrYdopSRAw0JoVbQ5mDE"
 };
 
+/* ULTRA STABLE MODE */
+document.documentElement.classList.add("ultra-stable");
+document.body.classList.add("ultra-stable");
+
+/* Remove old service worker/cache so her phone stops opening crashing old files */
+(function clearOldCache() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      regs.forEach((reg) => reg.unregister());
+    }).catch(() => {});
+  }
+
+  if ("caches" in window) {
+    caches.keys().then((keys) => {
+      keys.forEach((key) => caches.delete(key));
+    }).catch(() => {});
+  }
+})();
+
 const toast = document.getElementById("toast");
 const creatorCodeText = document.getElementById("creatorCodeText");
 const mapCreatorCode = document.getElementById("mapCreatorCode");
@@ -26,6 +45,10 @@ const soundToggle = document.getElementById("soundToggle");
 if (creatorCodeText) creatorCodeText.textContent = CONFIG.creatorCode;
 if (mapCreatorCode) mapCreatorCode.textContent = CONFIG.creatorCode;
 
+let hype = Number(localStorage.getItem("femaleEmxHype") || 42);
+let logoTapCount = 0;
+let soundOn = false;
+
 const challenges = [
   "Land hot, get 3 eliminations, and clip the best moment.",
   "Play her map and tag her with your best clip.",
@@ -39,19 +62,15 @@ const challenges = [
   "Duo challenge: protect your teammate for the whole match."
 ];
 
-let hype = Number(localStorage.getItem("femaleEmxHype") || 42);
-let logoTapCount = 0;
-let soundOn = false;
-let audioContext = null;
-
 function finishLoading() {
-  setTimeout(() => {
-    document.body.classList.add("loaded");
-  }, 1350);
+  document.body.classList.add("loaded");
 }
 
-window.addEventListener("load", finishLoading);
-setTimeout(finishLoading, 2600);
+window.addEventListener("load", () => {
+  setTimeout(finishLoading, 450);
+});
+
+setTimeout(finishLoading, 1200);
 
 function showToast(message) {
   if (!toast) return;
@@ -62,14 +81,13 @@ function showToast(message) {
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(() => {
     toast.classList.remove("show");
-  }, 2200);
+  }, 1700);
 }
 
 async function copyText(text, successMessage) {
   try {
     await navigator.clipboard.writeText(text);
     showToast(successMessage);
-    playBeep(680, 0.05);
   } catch (error) {
     const temp = document.createElement("textarea");
     temp.value = text;
@@ -81,9 +99,8 @@ async function copyText(text, successMessage) {
     try {
       document.execCommand("copy");
       showToast(successMessage);
-      playBeep(680, 0.05);
     } catch (fallbackError) {
-      showToast("Copy failed. Hold text and copy manually.");
+      showToast("Copy failed. Hold and copy manually.");
     }
 
     temp.remove();
@@ -91,19 +108,18 @@ async function copyText(text, successMessage) {
 }
 
 function setupExternalLinks() {
-  const externalLinks = document.querySelectorAll(".external-link");
+  const links = document.querySelectorAll(".external-link");
 
-  externalLinks.forEach((link) => {
+  links.forEach((link) => {
     link.addEventListener("click", (event) => {
       event.preventDefault();
 
       const url = link.dataset.url || link.href;
-
       showToast("Opening link...");
 
       setTimeout(() => {
         window.location.href = url;
-      }, 120);
+      }, 80);
     });
   });
 }
@@ -119,11 +135,8 @@ function setDailyChallenge() {
 function randomChallenge() {
   if (!challengeText) return;
 
-  const challenge = challenges[Math.floor(Math.random() * challenges.length)];
-  challengeText.textContent = challenge;
-
-  showToast("New EMX challenge loaded ⚡");
-  playBeep(520, 0.06);
+  challengeText.textContent = challenges[Math.floor(Math.random() * challenges.length)];
+  showToast("New challenge loaded ⚡");
 }
 
 function updateHype() {
@@ -149,12 +162,10 @@ function boostHype() {
 
   if (hype >= 100) {
     hype = 100;
-    showToast("MAX EMX ENERGY ⚡");
     document.body.classList.add("secret-mode");
-    playBeep(780, 0.08);
+    showToast("MAX EMX ENERGY ⚡");
   } else {
     showToast("Hype boosted to " + hype + "%");
-    playBeep(620, 0.05);
   }
 
   updateHype();
@@ -170,125 +181,30 @@ async function shareHub() {
   if (navigator.share) {
     try {
       await navigator.share(shareData);
-      playBeep(700, 0.05);
-    } catch (error) {
-      // User cancelled share.
-    }
+    } catch (error) {}
   } else {
     copyText(window.location.href, "Hub link copied.");
   }
 }
 
-function makeSpark(x, y) {
-  const colors = ["#62ff2e", "#c026ff", "#ffffff", "#b6ff3d"];
-
-  for (let i = 0; i < 8; i++) {
-    const spark = document.createElement("span");
-    spark.className = "spark";
-
-    const size = Math.floor(Math.random() * 7) + 5;
-    const angle = Math.random() * Math.PI * 2;
-    const distance = Math.floor(Math.random() * 84) + 28;
-
-    spark.style.left = x + "px";
-    spark.style.top = y + "px";
-    spark.style.width = size + "px";
-    spark.style.height = size + "px";
-    spark.style.background = colors[Math.floor(Math.random() * colors.length)];
-    spark.style.setProperty("--x", Math.cos(angle) * distance + "px");
-    spark.style.setProperty("--y", Math.sin(angle) * distance + "px");
-
-    document.body.appendChild(spark);
-
-    setTimeout(() => {
-      spark.remove();
-    }, 700);
-  }
-}
-
 function toggleSound() {
   soundOn = !soundOn;
-  document.body.classList.toggle("sound-on", soundOn);
 
   if (soundToggle) {
     soundToggle.textContent = soundOn ? "🔊" : "🔇";
   }
 
   showToast(soundOn ? "Sound FX on" : "Sound FX off");
-  playBeep(500, 0.05);
-}
-
-function playBeep(frequency, duration) {
-  if (!soundOn) return;
-
-  try {
-    audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-
-    oscillator.type = "sine";
-    oscillator.frequency.value = frequency;
-
-    gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
-
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + duration + 0.02);
-  } catch (error) {
-    soundOn = false;
-    document.body.classList.remove("sound-on");
-
-    if (soundToggle) {
-      soundToggle.textContent = "🔇";
-    }
-  }
 }
 
 function unlockSecretMode() {
   document.body.classList.add("secret-mode");
-  showToast("Baby girl neon mode unlocked 💜⚡");
-
   hype = 100;
   updateHype();
-  playBeep(880, 0.09);
+  showToast("Secret neon mode unlocked 💜⚡");
 }
 
-function emojiBurst(x, y, emojis) {
-  const emojiList = emojis && emojis.length ? emojis : ["💜", "💚", "⚡", "🎮", "🔥"];
-
-  for (let i = 0; i < 10; i++) {
-    const emoji = document.createElement("span");
-    emoji.className = "emoji-pop";
-    emoji.textContent = emojiList[Math.floor(Math.random() * emojiList.length)];
-
-    const angle = Math.random() * Math.PI * 2;
-    const distance = Math.floor(Math.random() * 105) + 45;
-
-    emoji.style.left = x + "px";
-    emoji.style.top = y + "px";
-    emoji.style.setProperty("--x", Math.cos(angle) * distance + "px");
-    emoji.style.setProperty("--y", Math.sin(angle) * distance - 95 + "px");
-
-    document.body.appendChild(emoji);
-
-    setTimeout(() => {
-      emoji.remove();
-    }, 950);
-  }
-}
-
-function emojiBurstFromElement(element, emojis) {
-  if (!element) return;
-
-  const rect = element.getBoundingClientRect();
-  emojiBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, emojis);
-}
-
+/* Button setup */
 if (copyCreatorBtn) {
   copyCreatorBtn.addEventListener("click", () => {
     copyText(CONFIG.creatorCode, "Creator code copied: " + CONFIG.creatorCode);
@@ -308,7 +224,7 @@ if (soundToggle) soundToggle.addEventListener("click", toggleSound);
 
 if (logoTap) {
   logoTap.addEventListener("click", () => {
-    logoTapCount += 1;
+    logoTapCount++;
 
     if (logoTapCount >= 5) {
       logoTapCount = 0;
@@ -319,49 +235,75 @@ if (logoTap) {
   });
 }
 
-document.addEventListener("pointerdown", (event) => {
-  makeSpark(event.clientX, event.clientY);
-});
-
-/* PUBLIC / DEMO CONVO WALL */
-(function () {
+/* PUBLIC / DEMO CONVO WALL - STABLE VERSION */
+(function setupConvoWall() {
   const convoForm = document.getElementById("convoForm");
   const convoUsername = document.getElementById("convoUsername");
   const convoMessage = document.getElementById("convoMessage");
   const convoCharCount = document.getElementById("convoCharCount");
   const convoMode = document.getElementById("convoMode");
   const convoFeed = document.getElementById("convoFeed");
+  const convoStats = document.getElementById("convoStats");
   const refreshConvoBtn = document.getElementById("refreshConvoBtn");
+  const convoSort = document.getElementById("convoSort");
   const vibeButtons = document.querySelectorAll(".vibe-btn");
   const topicButtons = document.querySelectorAll(".topic-chip");
+  const themeButtons = document.querySelectorAll(".theme-chip");
   const quickButtons = document.querySelectorAll(".quick-btn");
 
   if (!convoForm || !convoFeed) return;
 
-  let fanDb = null;
-  let wallOnline = false;
+  let db = null;
+  let online = false;
+  let loading = false;
   let selectedVibe = "💜";
   let selectedTopic = "shoutout";
+  let selectedTheme = "neon";
   let feedCache = [];
 
-  const topicLabels = {
+  const topics = {
     shoutout: "💜 Shoutout",
     map: "🎮 Map Review",
     clip: "🔥 Clip Idea",
-    question: "⚡ Question"
+    question: "⚡ Question",
+    duo: "👥 Duo",
+    wmoment: "🏆 W Moment"
   };
 
-  function configuredForPublicWall() {
+  const reactions = [
+    { key: "hearts", icon: "💜" },
+    { key: "bolts", icon: "⚡" },
+    { key: "fires", icon: "🔥" },
+    { key: "crowns", icon: "👑" },
+    { key: "wins", icon: "W" },
+    { key: "controllers", icon: "🎮" }
+  ];
+
+  function configured() {
     return (
       CONFIG.supabaseUrl.startsWith("https://") &&
-      !CONFIG.supabaseUrl.includes("PASTE_YOUR") &&
       CONFIG.supabaseAnonKey.length > 40 &&
       !CONFIG.supabaseAnonKey.includes("PASTE_YOUR") &&
       window.supabase
     );
   }
 
-  function createId() {
+  function start() {
+    if (configured()) {
+      db = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
+      online = true;
+
+      if (convoMode) convoMode.textContent = "Online public wall";
+    } else {
+      online = false;
+
+      if (convoMode) convoMode.textContent = "Demo mode on this phone";
+    }
+
+    loadWall();
+  }
+
+  function makeId() {
     if (window.crypto && crypto.randomUUID) {
       return crypto.randomUUID();
     }
@@ -369,37 +311,16 @@ document.addEventListener("pointerdown", (event) => {
     return "local-" + Date.now() + "-" + Math.random().toString(16).slice(2);
   }
 
-  function startConvoWall() {
-    if (configuredForPublicWall()) {
-      fanDb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
-      wallOnline = true;
-
-      if (convoMode) {
-        convoMode.textContent = "Online public wall";
-      }
-
-      setupRealtime();
-    } else {
-      wallOnline = false;
-
-      if (convoMode) {
-        convoMode.textContent = "Demo mode: add Supabase keys for public comments";
-      }
-    }
-
-    loadConvoWall();
-  }
-
   function getLocalWall() {
-    return JSON.parse(localStorage.getItem("femaleEmxConvoWallV3") || "[]");
+    return JSON.parse(localStorage.getItem("femaleEmxStableWall") || "[]");
   }
 
   function saveLocalWall(items) {
-    localStorage.setItem("femaleEmxConvoWallV3", JSON.stringify(items));
+    localStorage.setItem("femaleEmxStableWall", JSON.stringify(items.slice(0, 20)));
   }
 
-  function cleanUsername(username) {
-    let clean = username
+  function cleanUsername(value) {
+    let clean = value
       .trim()
       .replace(/\s+/g, "")
       .replace(/[^a-zA-Z0-9_.@-]/g, "")
@@ -412,14 +333,13 @@ document.addEventListener("pointerdown", (event) => {
     return clean;
   }
 
-  function cleanMessage(message) {
-    return message.trim().replace(/\s+/g, " ").slice(0, 140);
+  function cleanMessage(value) {
+    return value.trim().replace(/\s+/g, " ").slice(0, 140);
   }
 
   function timeAgo(dateString) {
     const then = new Date(dateString).getTime();
-    const now = Date.now();
-    const diff = Math.max(0, Math.floor((now - then) / 1000));
+    const diff = Math.max(0, Math.floor((Date.now() - then) / 1000));
 
     if (diff < 60) return "just now";
     if (diff < 3600) return Math.floor(diff / 60) + "m ago";
@@ -428,19 +348,60 @@ document.addEventListener("pointerdown", (event) => {
     return Math.floor(diff / 86400) + "d ago";
   }
 
+  function totalReactions(item) {
+    return reactions.reduce((sum, reaction) => {
+      return sum + Number(item[reaction.key] || 0);
+    }, 0);
+  }
+
   function updateCharCount() {
     if (!convoMessage || !convoCharCount) return;
 
     const count = convoMessage.value.length;
     convoCharCount.textContent = count + "/140";
-    convoCharCount.style.color = count > 120 ? "#ff8cff" : "rgba(255, 255, 255, 0.48)";
+    convoCharCount.style.color = count > 120 ? "#ff8cff" : "rgba(255,255,255,.48)";
   }
 
-  function renderConvoWall(items, highlightId) {
-    feedCache = items || [];
-    convoFeed.innerHTML = "";
+  function setStats(items) {
+    if (!convoStats) return;
 
-    if (!items || items.length === 0) {
+    const posts = items.length;
+    const reactionCount = items.reduce((sum, item) => sum + totalReactions(item), 0);
+
+    convoStats.textContent =
+      posts + " posts • " +
+      reactionCount + " reactions • " +
+      (online ? "public wall online" : "demo wall");
+  }
+
+  function hasReacted(id, key) {
+    return localStorage.getItem("femaleEmxReacted:" + id + ":" + key) === "yes";
+  }
+
+  function setReacted(id, key) {
+    localStorage.setItem("femaleEmxReacted:" + id + ":" + key, "yes");
+  }
+
+  function sortItems(items) {
+    const sorted = [...items];
+
+    if (convoSort && convoSort.value === "top") {
+      sorted.sort((a, b) => totalReactions(b) - totalReactions(a));
+    } else {
+      sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
+    return sorted;
+  }
+
+  function renderWall(items) {
+    const safeItems = sortItems(items || []).slice(0, 12);
+    feedCache = safeItems;
+
+    convoFeed.textContent = "";
+    setStats(safeItems);
+
+    if (!safeItems.length) {
       const empty = document.createElement("div");
       empty.className = "wall-empty";
       empty.textContent = "No messages yet. Be the first neon fan.";
@@ -448,13 +409,11 @@ document.addEventListener("pointerdown", (event) => {
       return;
     }
 
-    items.forEach((item) => {
-      const post = document.createElement("div");
-      post.className = "wall-post";
+    const frag = document.createDocumentFragment();
 
-      if (highlightId && String(item.id) === String(highlightId)) {
-        post.classList.add("new-post");
-      }
+    safeItems.forEach((item) => {
+      const post = document.createElement("div");
+      post.className = "wall-post theme-" + (item.theme || "neon");
 
       const top = document.createElement("div");
       top.className = "wall-top";
@@ -477,7 +436,7 @@ document.addEventListener("pointerdown", (event) => {
 
       const topic = document.createElement("div");
       topic.className = "wall-topic";
-      topic.textContent = topicLabels[item.topic] || "💜 Shoutout";
+      topic.textContent = topics[item.topic] || "💜 Shoutout";
 
       left.appendChild(user);
       left.appendChild(topic);
@@ -490,72 +449,82 @@ document.addEventListener("pointerdown", (event) => {
       message.className = "wall-message";
       message.textContent = item.message;
 
-      const reactions = document.createElement("div");
-      reactions.className = "reaction-row";
+      const row = document.createElement("div");
+      row.className = "reaction-row";
 
-      const heartBtn = document.createElement("button");
-      heartBtn.className = "react-btn";
-      heartBtn.type = "button";
-      heartBtn.dataset.react = "heart";
-      heartBtn.dataset.id = item.id;
-      heartBtn.textContent = "💜 " + (Number(item.hearts) || 0);
+      reactions.forEach((reaction) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "react-btn";
+        btn.dataset.id = item.id;
+        btn.dataset.react = reaction.key;
+        btn.textContent = reaction.icon + " " + Number(item[reaction.key] || 0);
 
-      const boltBtn = document.createElement("button");
-      boltBtn.className = "react-btn";
-      boltBtn.type = "button";
-      boltBtn.dataset.react = "bolt";
-      boltBtn.dataset.id = item.id;
-      boltBtn.textContent = "⚡ " + (Number(item.bolts) || 0);
+        if (hasReacted(item.id, reaction.key)) {
+          btn.classList.add("reacted");
+        }
 
-      reactions.appendChild(heartBtn);
-      reactions.appendChild(boltBtn);
+        row.appendChild(btn);
+      });
 
       top.appendChild(left);
       top.appendChild(time);
 
       post.appendChild(top);
       post.appendChild(message);
-      post.appendChild(reactions);
+      post.appendChild(row);
 
-      convoFeed.appendChild(post);
+      frag.appendChild(post);
     });
+
+    convoFeed.appendChild(frag);
   }
 
-  async function loadConvoWall(silent) {
-    if (!wallOnline) {
-      renderConvoWall(getLocalWall());
+  async function loadWall() {
+    if (loading || document.hidden) return;
+
+    loading = true;
+
+    if (refreshConvoBtn) refreshConvoBtn.disabled = true;
+    if (convoMode) convoMode.textContent = online ? "Loading wall..." : "Demo wall";
+
+    if (!online) {
+      renderWall(getLocalWall());
+      loading = false;
+      if (refreshConvoBtn) refreshConvoBtn.disabled = false;
       return;
     }
 
-    if (!silent && convoMode) {
-      convoMode.textContent = "Loading wall...";
-    }
-
-    const { data, error } = await fanDb
+    const { data, error } = await db
       .from("fan_wall")
-      .select("id, username, message, vibe, topic, hearts, bolts, created_at")
+      .select("id, username, message, vibe, topic, theme, hearts, bolts, fires, crowns, wins, controllers, created_at")
       .order("created_at", { ascending: false })
-      .limit(40);
+      .limit(12);
+
+    loading = false;
+    if (refreshConvoBtn) refreshConvoBtn.disabled = false;
 
     if (error) {
-      if (convoMode) {
-        convoMode.textContent = "Wall error";
-      }
-
-      showToast("Convo wall could not load. Check Supabase SQL.");
-      renderConvoWall([]);
-      console.error("Supabase load error:", error);
+      console.error("Wall load error:", error);
+      if (convoMode) convoMode.textContent = "Wall paused";
+      showToast("Wall error. Check Supabase SQL.");
+      renderWall([]);
       return;
     }
 
-    if (convoMode) {
-      convoMode.textContent = "Online public wall";
-    }
-
-    renderConvoWall(data);
+    if (convoMode) convoMode.textContent = "Online public wall";
+    renderWall(data || []);
   }
 
-  async function sendConvoMessage(submitButton) {
+  async function sendMessage(submitBtn) {
+    const now = Date.now();
+    const lastPost = Number(localStorage.getItem("femaleEmxLastPostTime") || 0);
+
+    if (now - lastPost < 7000) {
+      showToast("Wait a few seconds before posting again.");
+      return;
+    }
+
     const username = cleanUsername(convoUsername.value);
     const message = cleanMessage(convoMessage.value);
 
@@ -564,198 +533,187 @@ document.addEventListener("pointerdown", (event) => {
       return;
     }
 
-    if (message.length < 1) {
+    if (!message) {
       showToast("Write a message first.");
       return;
     }
 
-    const newPost = {
-      id: createId(),
+    if (submitBtn) submitBtn.disabled = true;
+
+    const post = {
+      id: makeId(),
       username,
       message,
       vibe: selectedVibe,
       topic: selectedTopic,
+      theme: selectedTheme,
       hearts: 0,
       bolts: 0,
+      fires: 0,
+      crowns: 0,
+      wins: 0,
+      controllers: 0,
       created_at: new Date().toISOString()
     };
 
+    localStorage.setItem("femaleEmxLastPostTime", String(now));
     convoUsername.value = username;
 
-    if (!wallOnline) {
+    if (!online) {
       const current = getLocalWall();
-      current.unshift(newPost);
-      saveLocalWall(current.slice(0, 40));
+      current.unshift(post);
+      saveLocalWall(current);
 
       convoMessage.value = "";
       updateCharCount();
+      renderWall(current);
+      showToast("Demo message posted.");
 
-      renderConvoWall(current, newPost.id);
-      showToast("Demo message posted. Add Supabase for public wall.");
-      emojiBurstFromElement(submitButton || convoForm, [selectedVibe, "⚡", "💚"]);
-      playBeep(740, 0.06);
+      if (submitBtn) submitBtn.disabled = false;
       return;
     }
 
-    const { error } = await fanDb
+    const { error } = await db
       .from("fan_wall")
       .insert({
         username,
         message,
         vibe: selectedVibe,
-        topic: selectedTopic
+        topic: selectedTopic,
+        theme: selectedTheme
       });
 
+    if (submitBtn) submitBtn.disabled = false;
+
     if (error) {
-      showToast("Message failed. Check Supabase table/policies.");
-      console.error("Supabase insert error:", error);
+      console.error("Post error:", error);
+      showToast("Message failed. Check Supabase.");
       return;
     }
 
     convoMessage.value = "";
     updateCharCount();
-
-    showToast("Message posted 💜⚡");
-    emojiBurstFromElement(submitButton || convoForm, [selectedVibe, "⚡", "💚"]);
-    playBeep(740, 0.06);
-
-    loadConvoWall(true);
+    showToast("Message posted 💜");
+    loadWall();
   }
 
-  async function reactToPost(id, reaction, button) {
+  async function react(id, key, button) {
     const item = feedCache.find((post) => String(post.id) === String(id));
     if (!item) return;
 
-    const column = reaction === "bolt" ? "bolts" : "hearts";
-    item[column] = Number(item[column] || 0) + 1;
-
-    renderConvoWall(feedCache, id);
-
-    if (button) {
-      emojiBurstFromElement(button, reaction === "bolt" ? ["⚡", "💚"] : ["💜", "💚"]);
+    if (hasReacted(id, key)) {
+      showToast("Already reacted.");
+      return;
     }
 
-    playBeep(reaction === "bolt" ? 780 : 650, 0.045);
+    setReacted(id, key);
+    item[key] = Number(item[key] || 0) + 1;
 
-    if (!wallOnline) {
+    if (button) {
+      button.classList.add("reacted");
+      const reaction = reactions.find((r) => r.key === key);
+      button.textContent = (reaction ? reaction.icon : "💜") + " " + item[key];
+    }
+
+    setStats(feedCache);
+
+    if (!online) {
       saveLocalWall(feedCache);
       return;
     }
 
-    const { error } = await fanDb
+    const { error } = await db
       .from("fan_wall")
-      .update({
-        [column]: item[column]
-      })
+      .update({ [key]: item[key] })
       .eq("id", id);
 
     if (error) {
-      showToast("Reaction showed, but database update failed.");
-      console.error("Supabase reaction error:", error);
-      return;
+      console.error("Reaction error:", error);
+      showToast("Reaction error.");
     }
-
-    loadConvoWall(true);
   }
 
-  function setupRealtime() {
-    if (!wallOnline) return;
+  vibeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedVibe = btn.dataset.vibe;
 
-    fanDb
-      .channel("female-emx-convo-wall")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "fan_wall"
-        },
-        () => {
-          loadConvoWall(true);
-        }
-      )
-      .subscribe();
-  }
+      vibeButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
 
-  vibeButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      selectedVibe = button.dataset.vibe;
-
-      vibeButtons.forEach((btn) => {
-        btn.classList.remove("active");
-      });
-
-      button.classList.add("active");
       showToast("Vibe selected " + selectedVibe);
-      emojiBurstFromElement(button, [selectedVibe, "⚡"]);
     });
   });
 
-  topicButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      selectedTopic = button.dataset.topic;
+  topicButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedTopic = btn.dataset.topic;
 
-      topicButtons.forEach((btn) => {
-        btn.classList.remove("active");
-      });
+      topicButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
 
-      button.classList.add("active");
       showToast("Topic selected");
     });
   });
 
-  quickButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      convoMessage.value = button.dataset.fill || "";
+  themeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedTheme = btn.dataset.theme;
+
+      themeButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      showToast("Card style selected");
+    });
+  });
+
+  quickButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      convoMessage.value = btn.dataset.fill || "";
       updateCharCount();
       convoMessage.focus();
       showToast("Quick message loaded");
     });
   });
 
-  if (convoMessage) {
-    convoMessage.addEventListener("input", updateCharCount);
+  if (convoMessage) convoMessage.addEventListener("input", updateCharCount);
+
+  if (convoSort) {
+    convoSort.addEventListener("change", () => {
+      renderWall(feedCache);
+    });
   }
 
   convoForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
-    const submitButton = convoForm.querySelector('button[type="submit"]');
-    sendConvoMessage(submitButton);
+    const submitBtn = convoForm.querySelector('button[type="submit"]');
+    sendMessage(submitBtn);
   });
 
   if (refreshConvoBtn) {
     refreshConvoBtn.addEventListener("click", () => {
-      loadConvoWall();
+      loadWall();
       showToast("Wall refreshed.");
     });
   }
 
   convoFeed.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-react]");
-    if (!button) return;
+    const btn = event.target.closest("[data-react]");
+    if (!btn) return;
 
-    reactToPost(button.dataset.id, button.dataset.react, button);
+    react(btn.dataset.id, btn.dataset.react, btn);
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      loadWall();
+    }
   });
 
   updateCharCount();
-  startConvoWall();
-
-  setInterval(() => {
-    if (wallOnline) {
-      loadConvoWall(true);
-    }
-  }, 20000);
+  start();
 })();
 
 setupExternalLinks();
 setDailyChallenge();
 updateHype();
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {
-      // Optional PWA cache failed. Site still works.
-    });
-  });
-}
