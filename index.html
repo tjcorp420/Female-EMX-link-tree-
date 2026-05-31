@@ -2,12 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#07000d">
-  <meta name="description" content="Female EMX official creator hub with TikTok, Fortnite maps, EMX Tweaks, and a neon public fan wall.">
+  <meta name="description" content="Female EMX official creator hub with TikTok, Fortnite maps, EMX Tweaks, and a public fans and comments section.">
   <meta name="format-detection" content="telephone=no">
-
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Female EMX">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,7 +13,7 @@
 
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=lowlag4">
+  <link rel="stylesheet" href="styles.css?v=delete-report1">
 
   <title>Female EMX</title>
 </head>
@@ -233,11 +231,12 @@
       <article class="feature wide convo-wall" id="convoWall">
         <p class="section-label">Fans</p>
 
-<h2>Fans & Comments</h2>
+        <h2>Fans & Comments</h2>
 
-<p>
-  Leave a comment, pick a vibe, choose a topic, customize your card, and react to other fans.
-</p>
+        <p>
+          Leave a comment, pick a vibe, choose a topic, customize your card, and react to other fans.
+          Posts made from this phone will show a delete button only on this phone.
+        </p>
 
         <div class="pinned-post">
           <div class="pinned-top">
@@ -291,75 +290,33 @@
           <div class="picker-label">Topic</div>
 
           <div class="topic-picker" aria-label="Choose a topic">
-            <button class="topic-chip active" type="button" data-topic="shoutout">
-              💜 Shoutout
-            </button>
-
-            <button class="topic-chip" type="button" data-topic="map">
-              🎮 Map Review
-            </button>
-
-            <button class="topic-chip" type="button" data-topic="clip">
-              🔥 Clip Idea
-            </button>
-
-            <button class="topic-chip" type="button" data-topic="question">
-              ⚡ Question
-            </button>
-
-            <button class="topic-chip" type="button" data-topic="duo">
-              👥 Duo
-            </button>
-
-            <button class="topic-chip" type="button" data-topic="wmoment">
-              🏆 W Moment
-            </button>
+            <button class="topic-chip active" type="button" data-topic="shoutout">💜 Shoutout</button>
+            <button class="topic-chip" type="button" data-topic="map">🎮 Map Review</button>
+            <button class="topic-chip" type="button" data-topic="clip">🔥 Clip Idea</button>
+            <button class="topic-chip" type="button" data-topic="question">⚡ Question</button>
+            <button class="topic-chip" type="button" data-topic="duo">👥 Duo</button>
+            <button class="topic-chip" type="button" data-topic="wmoment">🏆 W Moment</button>
           </div>
 
           <div class="picker-label">Card style</div>
 
           <div class="theme-picker" aria-label="Choose card style">
-            <button class="theme-chip active" type="button" data-theme="neon">
-              Neon
-            </button>
-
-            <button class="theme-chip" type="button" data-theme="royal">
-              Royal
-            </button>
-
-            <button class="theme-chip" type="button" data-theme="tryhard">
-              Tryhard
-            </button>
-
-            <button class="theme-chip" type="button" data-theme="cozy">
-              Cozy
-            </button>
-
-            <button class="theme-chip" type="button" data-theme="pink">
-              Pink
-            </button>
+            <button class="theme-chip active" type="button" data-theme="neon">Neon</button>
+            <button class="theme-chip" type="button" data-theme="royal">Royal</button>
+            <button class="theme-chip" type="button" data-theme="tryhard">Tryhard</button>
+            <button class="theme-chip" type="button" data-theme="cozy">Cozy</button>
+            <button class="theme-chip" type="button" data-theme="pink">Pink</button>
           </div>
 
           <div class="quick-prompts">
-            <button type="button" class="quick-btn" data-fill="Your map is fire 🔥">
-              Map is fire
-            </button>
-
-            <button type="button" class="quick-btn" data-fill="I used creator code MEDUSAA 💚">
-              Used code
-            </button>
-
-            <button type="button" class="quick-btn" data-fill="Drop a new map soon ⚡">
-              New map?
-            </button>
-
-            <button type="button" class="quick-btn" data-fill="Your TikTok clips go crazy 🎮">
-              Clips go crazy
-            </button>
+            <button type="button" class="quick-btn" data-fill="Your map is fire 🔥">Map is fire</button>
+            <button type="button" class="quick-btn" data-fill="I used creator code MEDUSAA 💚">Used code</button>
+            <button type="button" class="quick-btn" data-fill="Drop a new map soon ⚡">New map?</button>
+            <button type="button" class="quick-btn" data-fill="Your TikTok clips go crazy 🎮">Clips go crazy</button>
           </div>
 
           <div class="convo-meta">
-            <span id="convoMode">Loading wall...</span>
+            <span id="convoMode">Loading comments...</span>
 
             <select id="convoSort" class="sort-select" aria-label="Sort comments">
               <option value="newest">Newest</option>
@@ -373,7 +330,7 @@
         </form>
 
         <div class="wall-stats" id="convoStats">
-          Loading wall stats...
+          Loading comment stats...
         </div>
 
         <div class="convo-feed" id="convoFeed"></div>
@@ -400,7 +357,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="styles.css?v=stable5">
-<script src="script.js?v=comments1"></script>
+  <script src="script.js?v=delete-report1"></script>
 </body>
 </html>

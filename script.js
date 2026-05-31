@@ -26,8 +26,13 @@ const IS_LOCAL_PREVIEW = (() => {
   );
 })();
 
-/* Remove old service worker/cache so her phone stops opening crashing old files */
-(function clearOldCache() {
+/* Remove old service worker/cache one time so her phone stops opening old crashing files */
+(function clearOldCacheOnce() {
+  const cacheFlag = "femaleEmxClearedOldCacheV7";
+
+  if (localStorage.getItem(cacheFlag) === "yes") return;
+  localStorage.setItem(cacheFlag, "yes");
+
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.getRegistrations().then((regs) => {
       regs.forEach((reg) => reg.unregister());
@@ -248,7 +253,7 @@ if (logoTap) {
   });
 }
 
-/* PUBLIC / DEMO COMMENTS - STABLE VERSION */
+/* PUBLIC / DEMO COMMENTS - STABLE VERSION WITH OWN DELETE + REPORT */
 (function setupComments() {
   const convoForm = document.getElementById("convoForm");
   const convoUsername = document.getElementById("convoUsername");
@@ -268,7 +273,9 @@ if (logoTap) {
 
   let db = null;
   let online = false;
+  let canPost = false;
   let loading = false;
+  let currentUser = null;
   let selectedVibe = "💜";
   let selectedTopic = "shoutout";
   let selectedTheme = "neon";
@@ -303,19 +310,60 @@ if (logoTap) {
     );
   }
 
-  function start() {
+  async function start() {
     if (configured()) {
-      db = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
-      online = true;
+      db = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: false
+        }
+      });
 
-      if (convoMode) convoMode.textContent = "Comments online";
+      online = true;
+      await ensureAnonymousUser();
+
+      if (convoMode) {
+        convoMode.textContent = canPost ? "Comments online" : "Comments online · sign-in needed";
+      }
     } else {
       online = false;
+      canPost = true;
 
       if (convoMode) convoMode.textContent = "Demo comments";
     }
 
     loadComments();
+  }
+
+  async function ensureAnonymousUser() {
+    canPost = false;
+    currentUser = null;
+
+    try {
+      const sessionResult = await db.auth.getSession();
+      const sessionUser = sessionResult?.data?.session?.user;
+
+      if (sessionUser) {
+        currentUser = sessionUser;
+        canPost = true;
+        return;
+      }
+
+      const signInResult = await db.auth.signInAnonymously();
+
+      if (signInResult.error) {
+        console.error("Anonymous sign-in error:", signInResult.error);
+        showToast("Enable Anonymous Sign-Ins in Supabase Auth.");
+        return;
+      }
+
+      currentUser = signInResult?.data?.user || null;
+      canPost = !!currentUser;
+    } catch (error) {
+      console.error("Auth setup error:", error);
+      showToast("Comments sign-in failed.");
+    }
   }
 
   function makeId() {
@@ -397,6 +445,24 @@ if (logoTap) {
     localStorage.setItem("femaleEmxReacted:" + id + ":" + key, "yes");
   }
 
+  function hasReported(id) {
+    return localStorage.getItem("femaleEmxReported:" + id) === "yes";
+  }
+
+  function setReported(id) {
+    localStorage.setItem("femaleEmxReported:" + id, "yes");
+  }
+
+  function ownsPost(item) {
+    if (!item) return false;
+
+    if (!online) {
+      return item.owner_id === "local-owner";
+    }
+
+    return !!currentUser && item.owner_id === currentUser.id;
+  }
+
   function sortItems(items) {
     const sorted = [...items];
 
@@ -449,6 +515,13 @@ if (logoTap) {
       user.appendChild(badge);
       user.appendChild(userText);
 
+      if (ownsPost(item)) {
+        const ownerTag = document.createElement("span");
+        ownerTag.className = "owner-tag";
+        ownerTag.textContent = "Your post";
+        user.appendChild(ownerTag);
+      }
+
       const topic = document.createElement("div");
       topic.className = "wall-topic";
       topic.textContent = topics[item.topic] || "💜 Shoutout";
@@ -482,12 +555,37 @@ if (logoTap) {
         row.appendChild(btn);
       });
 
+      const actionRow = document.createElement("div");
+      actionRow.className = "comment-actions";
+
+      if (ownsPost(item)) {
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "delete-btn";
+        deleteBtn.dataset.deleteId = item.id;
+        deleteBtn.textContent = "Delete my comment";
+        actionRow.appendChild(deleteBtn);
+      }
+
+      const reportBtn = document.createElement("button");
+      reportBtn.type = "button";
+      reportBtn.className = "report-btn";
+      reportBtn.dataset.reportId = item.id;
+      reportBtn.textContent = hasReported(item.id) ? "Reported" : "Report";
+
+      if (hasReported(item.id)) {
+        reportBtn.classList.add("reported");
+      }
+
+      actionRow.appendChild(reportBtn);
+
       top.appendChild(left);
       top.appendChild(time);
 
       post.appendChild(top);
       post.appendChild(message);
       post.appendChild(row);
+      post.appendChild(actionRow);
 
       frag.appendChild(post);
     });
@@ -512,7 +610,9 @@ if (logoTap) {
 
     const { data, error } = await db
       .from("fan_wall")
-      .select("id, username, message, vibe, topic, theme, hearts, bolts, fires, crowns, wins, controllers, created_at")
+      .select("id, owner_id, username, message, vibe, topic, theme, hearts, bolts, fires, crowns, wins, controllers, reports, hidden, created_at")
+      .eq("hidden", false)
+      .lt("reports", 3)
       .order("created_at", { ascending: false })
       .limit(12);
 
@@ -522,12 +622,12 @@ if (logoTap) {
     if (error) {
       console.error("Comments load error:", error);
       if (convoMode) convoMode.textContent = "Comments paused";
-      showToast("Comments error. Check Supabase.");
+      showToast("Comments error. Run the new Supabase SQL.");
       renderComments([]);
       return;
     }
 
-    if (convoMode) convoMode.textContent = "Comments online";
+    if (convoMode) convoMode.textContent = canPost ? "Comments online" : "Comments online · sign-in needed";
     renderComments(data || []);
   }
 
@@ -553,10 +653,16 @@ if (logoTap) {
       return;
     }
 
+    if (online && !canPost) {
+      showToast("Enable Anonymous Sign-Ins in Supabase Auth first.");
+      return;
+    }
+
     if (submitBtn) submitBtn.disabled = true;
 
     const post = {
       id: makeId(),
+      owner_id: online && currentUser ? currentUser.id : "local-owner",
       username,
       message,
       vibe: selectedVibe,
@@ -568,6 +674,8 @@ if (logoTap) {
       crowns: 0,
       wins: 0,
       controllers: 0,
+      reports: 0,
+      hidden: false,
       created_at: new Date().toISOString()
     };
 
@@ -591,6 +699,7 @@ if (logoTap) {
     const { error } = await db
       .from("fan_wall")
       .insert({
+        owner_id: currentUser.id,
         username,
         message,
         vibe: selectedVibe,
@@ -602,7 +711,7 @@ if (logoTap) {
 
     if (error) {
       console.error("Comment post error:", error);
-      showToast("Comment failed. Check Supabase.");
+      showToast("Comment failed. Check Supabase Auth/SQL.");
       return;
     }
 
@@ -646,6 +755,83 @@ if (logoTap) {
       console.error("Reaction error:", error);
       showToast("Reaction error.");
     }
+  }
+
+  async function reportComment(id, button) {
+    const item = feedCache.find((post) => String(post.id) === String(id));
+    if (!item) return;
+
+    if (hasReported(id)) {
+      showToast("Already reported.");
+      return;
+    }
+
+    setReported(id);
+    item.reports = Number(item.reports || 0) + 1;
+
+    if (button) {
+      button.classList.add("reported");
+      button.textContent = "Reported";
+    }
+
+    showToast("Comment reported.");
+
+    if (!online) {
+      saveLocalComments(feedCache.filter((post) => Number(post.reports || 0) < 3));
+      renderComments(getLocalComments());
+      return;
+    }
+
+    const { error } = await db
+      .from("fan_wall")
+      .update({ reports: item.reports })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Report error:", error);
+      showToast("Report error.");
+      return;
+    }
+
+    if (item.reports >= 3) {
+      showToast("Comment hidden after reports.");
+      loadComments();
+    }
+  }
+
+  async function deleteComment(id) {
+    const item = feedCache.find((post) => String(post.id) === String(id));
+    if (!item) return;
+
+    if (!ownsPost(item)) {
+      showToast("You can only delete your own comments.");
+      return;
+    }
+
+    const confirmDelete = confirm("Delete your comment?");
+    if (!confirmDelete) return;
+
+    if (!online) {
+      const updated = getLocalComments().filter((post) => String(post.id) !== String(id));
+      saveLocalComments(updated);
+      renderComments(updated);
+      showToast("Comment deleted.");
+      return;
+    }
+
+    const { error } = await db
+      .from("fan_wall")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Delete error:", error);
+      showToast("Delete failed. Only the original device can delete it.");
+      return;
+    }
+
+    showToast("Comment deleted.");
+    loadComments();
   }
 
   vibeButtons.forEach((btn) => {
@@ -713,10 +899,22 @@ if (logoTap) {
   }
 
   convoFeed.addEventListener("click", (event) => {
-    const btn = event.target.closest("[data-react]");
-    if (!btn) return;
+    const reactBtn = event.target.closest("[data-react]");
+    if (reactBtn) {
+      react(reactBtn.dataset.id, reactBtn.dataset.react, reactBtn);
+      return;
+    }
 
-    react(btn.dataset.id, btn.dataset.react, btn);
+    const reportBtn = event.target.closest("[data-report-id]");
+    if (reportBtn) {
+      reportComment(reportBtn.dataset.reportId, reportBtn);
+      return;
+    }
+
+    const deleteBtn = event.target.closest("[data-delete-id]");
+    if (deleteBtn) {
+      deleteComment(deleteBtn.dataset.deleteId);
+    }
   });
 
   document.addEventListener("visibilitychange", () => {

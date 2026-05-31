@@ -1,8 +1,8 @@
 {
   "name": "Female EMX",
   "short_name": "Female EMX",
-  "description": "Female EMX creator hub with TikTok, Fortnite maps, EMX Tweaks, and a neon fan wall.",
-  "start_url": "./",
+  "description": "Female EMX creator hub with links, maps, and fans/comments.",
+  "start_url": "./?v=delete-report1",
   "scope": "./",
   "display": "standalone",
   "background_color": "#020006",
