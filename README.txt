@@ -66,3 +66,6 @@ ADMIN V4 MEDIA UPLOAD
 - Tap Apply Changes Live.
 - Public site opens the clip in a glass modal with close, play/pause, and seek slider.
 - Keep videos under 25MB for iPhone stability.
+
+
+V4.1 VIDEO FIX: Modal now shows load/play errors, accepts MOV uploads, auto-enables clip card after video upload, and prevents poster-image URLs from being used as the video source. Best format: MP4 H.264/AAC under 25 MB.

@@ -1250,7 +1250,7 @@ function initAdminV2PublicExtras() {
 
     if (featuredClipSection) {
       const clip = String(s.clip_video_url || s.featured_clip_url || "").trim();
-      const enabled = (s.clip_enabled === true || s.show_featured_clip !== false) && !!clip;
+      const enabled = (s.clip_enabled === true && s.show_featured_clip !== false && !!clip);
       featuredClipSection.classList.toggle("hidden", !enabled);
       if (featuredClipTitleText) featuredClipTitleText.textContent = s.clip_title || "Clip of the Week";
       if (featuredClipDescriptionText) featuredClipDescriptionText.textContent = s.clip_description || "Watch the latest Female EMX clip inside the app.";
@@ -1403,7 +1403,7 @@ function initAdminV2PublicExtras() {
 }
 
 
-/* ADMIN V4 FEATURED CLIP MODAL PLAYER */
+/* ADMIN V4.1 FEATURED CLIP MODAL PLAYER - VIDEO LOAD FIX */
 function setupFeaturedClipModal() {
   const modal = document.getElementById("clipModal");
   const backdrop = document.getElementById("clipModalBackdrop");
@@ -1416,45 +1416,142 @@ function setupFeaturedClipModal() {
   const duration = document.getElementById("clipDuration");
   const title = document.getElementById("clipModalTitle");
   const desc = document.getElementById("clipModalDescription");
+  const status = document.getElementById("clipVideoStatus");
+  const rawLink = document.getElementById("clipRawVideoLink");
 
   if (!modal || !openBtn || !video || !playBtn || !seek) return;
 
+  let currentClipUrl = "";
+  let loadingClip = false;
+
   function fmt(seconds) {
-    if (!Number.isFinite(seconds)) return "0:00";
+    if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
     return mins + ":" + secs;
   }
 
+  function setStatus(message, isError) {
+    if (!status) return;
+    status.textContent = message;
+    status.classList.toggle("error", !!isError);
+  }
+
+  function resetTimes() {
+    if (current) current.textContent = "0:00";
+    if (duration) duration.textContent = "0:00";
+    seek.value = 0;
+  }
+
   function updateTimes() {
-    current.textContent = fmt(video.currentTime);
-    duration.textContent = fmt(video.duration);
+    if (current) current.textContent = fmt(video.currentTime);
+    if (duration) duration.textContent = fmt(video.duration);
+
     if (Number.isFinite(video.duration) && video.duration > 0) {
+      seek.disabled = false;
       seek.value = Math.round((video.currentTime / video.duration) * 1000);
+    } else {
+      seek.disabled = true;
     }
+
     playBtn.textContent = video.paused ? "Play" : "Pause";
+  }
+
+  function normalizeVideoUrl(url) {
+    return String(url || "").trim();
+  }
+
+  function isProbablyImage(url) {
+    return /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i.test(url || "");
+  }
+
+  async function tryPlay() {
+    if (loadingClip) {
+      setStatus("Clip is still loading. Try again in a second.", false);
+      return;
+    }
+
+    if (!video.currentSrc && !video.src) {
+      setStatus("No playable video URL was found.", true);
+      return;
+    }
+
+    if (video.paused) {
+      try {
+        await video.play();
+        setStatus("Playing inside the app.", false);
+      } catch (error) {
+        console.error("Video play error:", error);
+        setStatus("Video could not play. Use MP4 H.264/AAC or re-upload the clip.", true);
+      }
+    } else {
+      video.pause();
+      setStatus("Paused.", false);
+    }
+
+    updateTimes();
+  }
+
+  function loadClipIntoVideo(clip) {
+    const url = normalizeVideoUrl(clip.videoUrl);
+
+    if (!url) {
+      setStatus("No clip uploaded yet.", true);
+      return false;
+    }
+
+    if (isProbablyImage(url)) {
+      setStatus("Clip Video URL is an image/poster, not a video. Upload an MP4/WebM/MOV in Admin → Media.", true);
+      return false;
+    }
+
+    if (rawLink) {
+      rawLink.href = url;
+      rawLink.classList.remove("hidden");
+    }
+
+    video.pause();
+    resetTimes();
+    playBtn.textContent = "Play";
+    playBtn.disabled = true;
+    seek.disabled = true;
+
+    video.poster = clip.posterUrl || "image.png";
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    video.preload = "auto";
+
+    if (currentClipUrl !== url) {
+      currentClipUrl = url;
+      loadingClip = true;
+      video.removeAttribute("src");
+      video.load();
+      video.src = url;
+      video.load();
+    } else {
+      loadingClip = false;
+      playBtn.disabled = false;
+    }
+
+    setStatus("Loading clip...", false);
+    return true;
   }
 
   function openModal() {
     const clip = window.FEMALE_EMX_CLIP || {};
-    if (!clip.videoUrl) {
-      showToast("No clip uploaded yet.");
-      return;
-    }
-    title.textContent = clip.title || "Clip of the Week";
-    desc.textContent = clip.description || "Watch the latest featured clip.";
-    video.poster = clip.posterUrl || "image.png";
-    if (video.src !== clip.videoUrl) {
-      video.src = clip.videoUrl;
-      video.load();
-    }
+
+    if (title) title.textContent = clip.title || "Clip of the Week";
+    if (desc) desc.textContent = clip.description || "Watch the latest featured clip.";
+
     modal.classList.remove("hidden");
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
-    video.play().catch(() => {
-      playBtn.textContent = "Play";
-    });
-    updateTimes();
+
+    const ok = loadClipIntoVideo(clip);
+    if (!ok) {
+      playBtn.disabled = true;
+      seek.disabled = true;
+    }
   }
 
   function closeModal() {
@@ -1468,20 +1565,52 @@ function setupFeaturedClipModal() {
   openBtn.addEventListener("click", openModal);
   closeBtn.addEventListener("click", closeModal);
   if (backdrop) backdrop.addEventListener("click", closeModal);
-  playBtn.addEventListener("click", () => {
-    if (video.paused) video.play().catch(() => {});
-    else video.pause();
-    updateTimes();
-  });
+
+  playBtn.addEventListener("click", tryPlay);
+
   seek.addEventListener("input", () => {
     if (Number.isFinite(video.duration) && video.duration > 0) {
       video.currentTime = (Number(seek.value) / 1000) * video.duration;
+      updateTimes();
     }
   });
+
+  video.addEventListener("loadstart", () => {
+    loadingClip = true;
+    playBtn.disabled = true;
+    setStatus("Loading clip...", false);
+  });
+
+  video.addEventListener("loadedmetadata", () => {
+    loadingClip = false;
+    playBtn.disabled = false;
+    setStatus("Clip loaded. Tap Play.", false);
+    updateTimes();
+  });
+
+  video.addEventListener("canplay", () => {
+    loadingClip = false;
+    playBtn.disabled = false;
+    setStatus("Ready to play.", false);
+    updateTimes();
+  });
+
   video.addEventListener("timeupdate", updateTimes);
-  video.addEventListener("loadedmetadata", updateTimes);
   video.addEventListener("play", updateTimes);
   video.addEventListener("pause", updateTimes);
+  video.addEventListener("ended", () => {
+    playBtn.textContent = "Replay";
+    setStatus("Clip ended.", false);
+  });
+
+  video.addEventListener("error", () => {
+    loadingClip = false;
+    playBtn.disabled = false;
+    console.error("Video element error:", video.error, video.currentSrc || video.src);
+    setStatus("Video failed to load. Re-upload as MP4 H.264/AAC under 25 MB, or check that Clip Video URL is not a poster image.", true);
+    updateTimes();
+  });
+
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !modal.classList.contains("hidden")) closeModal();
   });

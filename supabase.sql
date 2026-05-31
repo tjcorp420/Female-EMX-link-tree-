@@ -353,7 +353,7 @@ values (
   'female-emx-media',
   true,
   26214400,
-  array['video/mp4','video/webm','image/jpeg','image/png','image/webp']::text[]
+  array['video/mp4','video/webm','video/quicktime','image/jpeg','image/png','image/webp']::text[]
 )
 on conflict (id) do update set
   public = excluded.public,

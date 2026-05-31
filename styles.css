@@ -1238,3 +1238,30 @@ body.reactions-disabled .reaction-row {
     grid-row: 2;
   }
 }
+
+
+/* VIDEO MODAL STATUS / FALLBACK */
+.video-status {
+  margin: 10px 0 0;
+  color: rgba(255,255,255,.72);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+.video-status.error {
+  color: #ff9bd6;
+}
+.video-debug-link {
+  display: block;
+  margin: 12px auto 0;
+  width: fit-content;
+  color: var(--green);
+  font-weight: 950;
+  text-decoration: none;
+}
+.video-debug-link.hidden {
+  display: none !important;
+}
+.video-play-btn:disabled, .video-seek:disabled {
+  opacity: .55;
+}

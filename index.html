@@ -405,7 +405,7 @@
       </div>
 
       <div class="video-frame">
-        <video id="clipVideo" playsinline preload="metadata" poster="image.png"></video>
+        <video id="clipVideo" playsinline webkit-playsinline preload="auto" poster="image.png"></video>
       </div>
 
       <div class="video-controls">
@@ -415,13 +415,15 @@
         <span class="video-time" id="clipDuration">0:00</span>
       </div>
 
+      <p class="video-status" id="clipVideoStatus">Ready.</p>
       <p class="video-tip">Drag the slider to jump through the clip.</p>
+      <a class="video-debug-link hidden" id="clipRawVideoLink" href="#" target="_blank" rel="noopener">Open raw video link</a>
     </section>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="script.js?v=adminv4-media1"></script>
+  <script src="script.js?v=adminv4-video-fix1"></script>
 </body>
 </html>

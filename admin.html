@@ -7,7 +7,7 @@
   <meta name="description" content="Female EMX admin control panel.">
   <meta name="format-detection" content="telephone=no">
   <title>Female EMX Admin</title>
-  <link rel="stylesheet" href="admin.css?v=adminv4-media1">
+  <link rel="stylesheet" href="admin.css?v=adminv4-video-fix1">
   <style>
     #loginForm { display:grid; gap:14px; position:relative; z-index:99; pointer-events:auto!important; }
     #loginForm label { margin-top:8px; }
@@ -175,7 +175,7 @@
             <button class="primary-btn small live-btn" id="applyMediaBtn" type="button">Apply Changes Live</button>
           </div>
 
-          <p class="tiny">Upload your own MP4/WebM clip. Keep videos small for iPhone stability. After upload, tap Apply Changes Live.</p>
+          <p class="tiny">Upload your own MP4/WebM clip. Keep videos small for iPhone stability. MP4 H.264/AAC is best. After upload, tap Apply Changes Live.</p>
 
           <div class="form-grid">
             <label>Clip Title <input id="clipTitleInput" type="text" maxlength="60" placeholder="Clip of the Week"></label>
@@ -188,7 +188,7 @@
           <div class="upload-grid">
             <div class="upload-card">
               <p class="tiny-label">Upload Video</p>
-              <input id="clipVideoFileInput" type="file" accept="video/mp4,video/webm">
+              <input id="clipVideoFileInput" type="file" accept="video/mp4,video/webm,video/quicktime,.mov">
               <button class="ghost-btn" id="uploadClipVideoBtn" type="button">Upload Video</button>
             </div>
             <div class="upload-card">
@@ -690,7 +690,11 @@
       if (error) { console.error("Upload error", error); setMediaStatus("Upload failed. Run the V4 SQL/storage setup."); return; }
       const { data } = db.storage.from("female-emx-media").getPublicUrl(path);
       if (target && data?.publicUrl) target.value = data.publicUrl;
-      if (urlInputId === "clipVideoUrlInput" && $("featuredClipUrlInput")) $("featuredClipUrlInput").value = data.publicUrl;
+      if (urlInputId === "clipVideoUrlInput") {
+        if ($("featuredClipUrlInput")) $("featuredClipUrlInput").value = data.publicUrl;
+        if ($("clipEnabledInput")) $("clipEnabledInput").checked = true;
+        if ($("showFeaturedClipInputMedia")) $("showFeaturedClipInputMedia").checked = true;
+      }
       setMediaStatus("Upload complete. Tap Apply Changes Live.");
       updatePreview();
     }
