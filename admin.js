@@ -121,30 +121,32 @@ function timeAgo(dateString) {
 
 async function sendLoginLink() {
   const email = emailInput.value.trim().toLowerCase();
-
+  
   if (!email || !email.includes("@")) {
     showToast("Enter your admin email first.");
     return;
   }
-
+  
   sendLoginBtn.disabled = true;
-
+  
+  const redirectTo = "https://female-emx-link-tree.vercel.app/admin.html";
+  
   const { error } = await db.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: ADMIN_CONFIG.redirectUrl,
+      emailRedirectTo: redirectTo,
       shouldCreateUser: true
     }
   });
-
+  
   sendLoginBtn.disabled = false;
-
+  
   if (error) {
     console.error("Login link error:", error);
-    showToast("Login link failed. Check Supabase URL settings.");
+    showToast(error.message || "Login link failed.");
     return;
   }
-
+  
   showToast("Login link sent. Check your email.");
 }
 
