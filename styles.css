@@ -948,3 +948,51 @@ h1 span {
     font-size: 22px;
   }
 }
+
+/* ADMIN-CONTROLLED PUBLIC THEME MODES */
+body.bg-mode-neon {
+  --purple: #c026ff;
+  --green: #62ff2e;
+}
+
+body.bg-mode-pink {
+  --purple: #ff3df2;
+  --green: #ff8de8;
+}
+
+body.bg-mode-royal {
+  --purple: #b779ff;
+  --green: #ffd447;
+}
+
+body.bg-mode-green {
+  --purple: #35ff8b;
+  --green: #62ff2e;
+}
+
+body.bg-mode-lowlag .energy-wave,
+body.bg-mode-lowlag .orb,
+body.bg-mode-lowlag .bolt,
+body.bg-mode-lowlag .scanline,
+body.bg-mode-lowlag .bg::before,
+body.bg-mode-lowlag .bg::after {
+  display: none !important;
+}
+
+body.comments-disabled .convo-form {
+  display: none !important;
+}
+
+body.comments-disabled .convo-feed::before {
+  content: "Comments are paused by Female EMX.";
+  display: block;
+  padding: 13px;
+  border-radius: 18px;
+  text-align: center;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+body.reactions-disabled .reaction-row {
+  display: none !important;
+}

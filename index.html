@@ -13,7 +13,7 @@
 
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=delete-report1">
+  <link rel="stylesheet" href="styles.css?v=admin-control1">
 
   <title>Female EMX</title>
 </head>
@@ -58,12 +58,12 @@
 
       <p class="eyebrow">
         <span class="live-dot"></span>
-        Official Creator Hub
+        <span id="statusBadgeText">Official Creator Hub</span>
       </p>
 
       <h1>Female <span>EMX</span></h1>
 
-      <p class="tagline">
+      <p class="tagline" id="taglineText">
         TikTok clips, Fortnite maps, creator code, EMX links, and neon gamer energy in one place.
       </p>
 
@@ -93,6 +93,7 @@
 
     <nav class="links" aria-label="Main links">
       <a
+        id="tiktokLink"
         class="link-card external-link"
         href="https://www.tiktok.com/@ttfemale_emx"
         data-url="https://www.tiktok.com/@ttfemale_emx"
@@ -108,6 +109,7 @@
       </a>
 
       <a
+        id="emxTweaksLink"
         class="link-card external-link"
         href="https://efect-macros-x-tweaks.vercel.app/"
         data-url="https://efect-macros-x-tweaks.vercel.app/"
@@ -123,6 +125,7 @@
       </a>
 
       <a
+        id="fortniteMapsLink"
         class="link-card external-link"
         href="https://fortnite.gg/creator/medusaa"
         data-url="https://fortnite.gg/creator/medusaa"
@@ -150,11 +153,12 @@
 
         <div class="map-card">
           <p><strong>Creator Code:</strong> <span id="mapCreatorCode">MEDUSAA</span></p>
-          <p><strong>Map Hub:</strong> fortnite.gg/creator/medusaa</p>
+          <p><strong>Map Hub:</strong> <span id="mapHubText">fortnite.gg/creator/medusaa</span></p>
         </div>
 
         <div class="feature-actions">
           <a
+            id="openMapsLink"
             class="mini-btn external-link"
             href="https://fortnite.gg/creator/medusaa"
             data-url="https://fortnite.gg/creator/medusaa"
@@ -219,6 +223,7 @@
 
         <div class="feature-actions">
           <a
+            id="openTiktokLink"
             class="mini-btn external-link"
             href="https://www.tiktok.com/@ttfemale_emx"
             data-url="https://www.tiktok.com/@ttfemale_emx"
@@ -244,7 +249,7 @@
             <small>Official</small>
           </div>
 
-          <p>
+          <p id="pinnedMessageText">
             Use creator code <strong>MEDUSAA</strong>, play the maps, and drop a comment below 💜⚡
           </p>
         </div>
@@ -357,6 +362,6 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="script.js?v=delete-report1"></script>
+  <script src="script.js?v=admin-control1"></script>
 </body>
 </html>

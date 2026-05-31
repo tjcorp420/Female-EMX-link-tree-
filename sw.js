@@ -1,6 +1,5 @@
-/* Stability-first service worker file.
-   This project does NOT register it in script.js because old cached versions caused crashes.
-   Keep this file only so old browser references do not 404. */
+const CACHE_NAME = "female-emx-admin-control-v1";
+
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
@@ -10,4 +9,8 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
   );
   self.clients.claim();
+});
+
+self.addEventListener("fetch", (event) => {
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
 });

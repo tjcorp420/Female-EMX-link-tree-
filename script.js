@@ -6,7 +6,8 @@ const CONFIG = {
   fortniteMapsUrl: "https://fortnite.gg/creator/medusaa",
 
   supabaseUrl: "https://iosbgyokkfoaaawwqqqb.supabase.co",
-  supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlvc2JneW9ra2ZvYWFhd3dxcXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxOTMxMzIsImV4cCI6MjA5NTc2OTEzMn0.6xBFuHlvrhXyss9xzKCVH5CmrYdopSRAw0JoVbQ5mDE"
+  supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlvc2JneW9ra2ZvYWFhd3dxcXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxOTMxMzIsImV4cCI6MjA5NTc2OTEzMn0.6xBFuHlvrhXyss9xzKCVH5CmrYdopSRAw0JoVbQ5mDE",
+  settingsId: "main"
 };
 
 /* ULTRA STABLE MODE */
@@ -59,6 +60,136 @@ const hypeText = document.getElementById("hypeText");
 const boostBtn = document.getElementById("boostBtn");
 const logoTap = document.getElementById("logoTap");
 const soundToggle = document.getElementById("soundToggle");
+
+
+const SITE_DEFAULTS = {
+  brandName: "Female EMX",
+  creatorCode: "MEDUSAA",
+  tiktokUrl: "https://www.tiktok.com/@ttfemale_emx",
+  emxTweaksUrl: "https://efect-macros-x-tweaks.vercel.app/",
+  fortniteMapsUrl: "https://fortnite.gg/creator/medusaa",
+  statusBadge: "Official Creator Hub",
+  tagline: "TikTok clips, Fortnite maps, creator code, EMX links, and neon gamer energy in one place.",
+  pinnedMessage: "Use creator code <strong>MEDUSAA</strong>, play the maps, and drop a comment below 💜⚡",
+  backgroundMode: "neon",
+  primaryColor: "#c026ff",
+  secondaryColor: "#62ff2e",
+  commentsEnabled: true,
+  reactionsEnabled: true,
+  featuredClipUrl: "",
+  questionOfWeek: ""
+};
+
+let SITE_SETTINGS = { ...SITE_DEFAULTS };
+let settingsClient = null;
+
+function publicSupabaseConfigured() {
+  return (
+    !IS_LOCAL_PREVIEW &&
+    CONFIG.supabaseUrl.startsWith("https://") &&
+    CONFIG.supabaseAnonKey.length > 40 &&
+    !CONFIG.supabaseAnonKey.includes("PASTE_YOUR") &&
+    window.supabase
+  );
+}
+
+function applySiteSettings(rawSettings) {
+  if (rawSettings) {
+    SITE_SETTINGS = {
+      ...SITE_SETTINGS,
+      brandName: rawSettings.brand_name || SITE_SETTINGS.brandName,
+      creatorCode: rawSettings.creator_code || SITE_SETTINGS.creatorCode,
+      tiktokUrl: rawSettings.tiktok_url || SITE_SETTINGS.tiktokUrl,
+      emxTweaksUrl: rawSettings.emx_tweaks_url || SITE_SETTINGS.emxTweaksUrl,
+      fortniteMapsUrl: rawSettings.fortnite_maps_url || SITE_SETTINGS.fortniteMapsUrl,
+      statusBadge: rawSettings.status_badge || SITE_SETTINGS.statusBadge,
+      tagline: rawSettings.tagline || SITE_SETTINGS.tagline,
+      pinnedMessage: rawSettings.pinned_message || SITE_SETTINGS.pinnedMessage,
+      backgroundMode: rawSettings.background_mode || SITE_SETTINGS.backgroundMode,
+      primaryColor: rawSettings.primary_color || SITE_SETTINGS.primaryColor,
+      secondaryColor: rawSettings.secondary_color || SITE_SETTINGS.secondaryColor,
+      commentsEnabled: rawSettings.comments_enabled !== false,
+      reactionsEnabled: rawSettings.reactions_enabled !== false,
+      featuredClipUrl: rawSettings.featured_clip_url || "",
+      questionOfWeek: rawSettings.question_of_week || ""
+    };
+  }
+
+  CONFIG.creatorCode = SITE_SETTINGS.creatorCode;
+  CONFIG.tiktokUrl = SITE_SETTINGS.tiktokUrl;
+  CONFIG.emxTweaksUrl = SITE_SETTINGS.emxTweaksUrl;
+  CONFIG.fortniteMapsUrl = SITE_SETTINGS.fortniteMapsUrl;
+
+  document.title = SITE_SETTINGS.brandName;
+  document.body.style.setProperty("--purple", SITE_SETTINGS.primaryColor);
+  document.body.style.setProperty("--green", SITE_SETTINGS.secondaryColor);
+
+  ["neon", "pink", "royal", "green", "lowlag"].forEach((mode) => {
+    document.body.classList.toggle("bg-mode-" + mode, SITE_SETTINGS.backgroundMode === mode);
+  });
+
+  document.body.classList.toggle("comments-disabled", !SITE_SETTINGS.commentsEnabled);
+  document.body.classList.toggle("reactions-disabled", !SITE_SETTINGS.reactionsEnabled);
+
+  const statusBadgeText = document.getElementById("statusBadgeText");
+  const taglineText = document.getElementById("taglineText");
+  const pinnedMessageText = document.getElementById("pinnedMessageText");
+  const mapHubText = document.getElementById("mapHubText");
+
+  if (statusBadgeText) statusBadgeText.textContent = SITE_SETTINGS.statusBadge;
+  if (taglineText) taglineText.textContent = SITE_SETTINGS.tagline;
+  if (pinnedMessageText) pinnedMessageText.innerHTML = SITE_SETTINGS.pinnedMessage;
+  if (creatorCodeText) creatorCodeText.textContent = SITE_SETTINGS.creatorCode;
+  if (mapCreatorCode) mapCreatorCode.textContent = SITE_SETTINGS.creatorCode;
+  if (mapHubText) mapHubText.textContent = SITE_SETTINGS.fortniteMapsUrl.replace(/^https?:\/\//, "");
+
+  updateLinkTarget("tiktokLink", SITE_SETTINGS.tiktokUrl);
+  updateLinkTarget("openTiktokLink", SITE_SETTINGS.tiktokUrl);
+  updateLinkTarget("emxTweaksLink", SITE_SETTINGS.emxTweaksUrl);
+  updateLinkTarget("fortniteMapsLink", SITE_SETTINGS.fortniteMapsUrl);
+  updateLinkTarget("openMapsLink", SITE_SETTINGS.fortniteMapsUrl);
+
+  window.dispatchEvent(new CustomEvent("female-emx-settings-updated", { detail: SITE_SETTINGS }));
+}
+
+function updateLinkTarget(id, url) {
+  const link = document.getElementById(id);
+  if (!link || !url) return;
+
+  link.href = url;
+  link.dataset.url = url;
+}
+
+async function loadSiteSettings() {
+  applySiteSettings();
+
+  if (!publicSupabaseConfigured()) return;
+
+  try {
+    settingsClient = settingsClient || window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false
+      }
+    });
+
+    const { data, error } = await settingsClient
+      .from("site_settings")
+      .select("*")
+      .eq("id", CONFIG.settingsId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("Site settings load error:", error);
+      return;
+    }
+
+    if (data) applySiteSettings(data);
+  } catch (error) {
+    console.warn("Site settings unavailable:", error);
+  }
+}
 
 if (creatorCodeText) creatorCodeText.textContent = CONFIG.creatorCode;
 if (mapCreatorCode) mapCreatorCode.textContent = CONFIG.creatorCode;
@@ -434,7 +565,7 @@ if (logoTap) {
     convoStats.textContent =
       posts + " comments • " +
       reactionCount + " reactions • " +
-      (online ? "comments online" : "demo comments");
+      (SITE_SETTINGS.commentsEnabled ? (online ? "comments online" : "demo comments") : "comments paused");
   }
 
   function hasReacted(id, key) {
@@ -627,11 +758,16 @@ if (logoTap) {
       return;
     }
 
-    if (convoMode) convoMode.textContent = canPost ? "Comments online" : "Comments online · sign-in needed";
+    if (convoMode) convoMode.textContent = SITE_SETTINGS.commentsEnabled ? (canPost ? "Comments online" : "Comments online · sign-in needed") : "Comments paused";
     renderComments(data || []);
   }
 
   async function sendMessage(submitBtn) {
+    if (!SITE_SETTINGS.commentsEnabled) {
+      showToast("Comments are paused right now.");
+      return;
+    }
+
     const now = Date.now();
     const lastPost = Number(localStorage.getItem("femaleEmxLastPostTime") || 0);
 
@@ -722,6 +858,11 @@ if (logoTap) {
   }
 
   async function react(id, key, button) {
+    if (!SITE_SETTINGS.reactionsEnabled) {
+      showToast("Reactions are paused right now.");
+      return;
+    }
+
     const item = feedCache.find((post) => String(post.id) === String(id));
     if (!item) return;
 
@@ -923,10 +1064,18 @@ if (logoTap) {
     }
   });
 
+  window.addEventListener("female-emx-settings-updated", () => {
+    if (convoMode) {
+      convoMode.textContent = SITE_SETTINGS.commentsEnabled ? (online ? "Comments online" : "Demo comments") : "Comments paused";
+    }
+    setStats(feedCache);
+  });
+
   updateCharCount();
   start();
 })();
 
+loadSiteSettings();
 setupExternalLinks();
 setDailyChallenge();
 updateHype();
