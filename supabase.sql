@@ -1,177 +1,45 @@
--- Female EMX Admin V3 live apply + public comments setup
--- Run this in Supabase SQL Editor.
--- After it succeeds, add your admin email near the bottom where shown.
+-- FEMALE EMX PATCH: comment auth, delete ownership, video cleanup, dark theme support
+-- Safe to run multiple times.
 
-create extension if not exists pgcrypto;
-
-create table if not exists public.admin_users (
-  email text primary key,
-  created_at timestamptz not null default now()
-);
-
-alter table public.admin_users enable row level security;
-
-create or replace function public.is_admin()
-returns boolean
-language sql
-security definer
-set search_path = public
-stable
-as $$
-  select exists (
-    select 1
-    from public.admin_users
-    where lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
-  );
-$$;
-
-grant execute on function public.is_admin() to anon, authenticated;
-
-drop policy if exists "Admins can read admin users" on public.admin_users;
-drop policy if exists "Users can check their own admin record" on public.admin_users;
-
-create policy "Users can check their own admin record"
-on public.admin_users
-for select
-to authenticated
-using (
-  public.is_admin()
-  or lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
-);
-
-create table if not exists public.site_settings (
-  id text primary key default 'main',
-  brand_name text not null default 'Female EMX',
-  creator_code text not null default 'MEDUSAA',
-  tiktok_url text not null default 'https://www.tiktok.com/@ttfemale_emx',
-  emx_tweaks_url text not null default 'https://efect-macros-x-tweaks.vercel.app/',
-  fortnite_maps_url text not null default 'https://fortnite.gg/creator/medusaa',
-  status_badge text not null default 'Official Creator Hub',
-  tagline text not null default 'TikTok clips, Fortnite maps, creator code, EMX links, and neon gamer energy in one place.',
-  pinned_message text not null default 'Use creator code <strong>MEDUSAA</strong>, play the maps, and drop a comment below 💜⚡',
-  background_mode text not null default 'neon',
-  primary_color text not null default '#c026ff',
-  secondary_color text not null default '#62ff2e',
-  comments_enabled boolean not null default true,
-  reactions_enabled boolean not null default true,
-  featured_clip_url text not null default '',
-  question_of_week text not null default '',
-  updated_at timestamptz not null default now()
-);
-
-alter table public.site_settings
-add column if not exists brand_name text not null default 'Female EMX';
-alter table public.site_settings
-add column if not exists creator_code text not null default 'MEDUSAA';
-alter table public.site_settings
-add column if not exists tiktok_url text not null default 'https://www.tiktok.com/@ttfemale_emx';
-alter table public.site_settings
-add column if not exists emx_tweaks_url text not null default 'https://efect-macros-x-tweaks.vercel.app/';
-alter table public.site_settings
-add column if not exists fortnite_maps_url text not null default 'https://fortnite.gg/creator/medusaa';
-alter table public.site_settings
-add column if not exists status_badge text not null default 'Official Creator Hub';
-alter table public.site_settings
-add column if not exists tagline text not null default 'TikTok clips, Fortnite maps, creator code, EMX links, and neon gamer energy in one place.';
-alter table public.site_settings
-add column if not exists pinned_message text not null default 'Use creator code <strong>MEDUSAA</strong>, play the maps, and drop a comment below 💜⚡';
-alter table public.site_settings
-add column if not exists background_mode text not null default 'neon';
-alter table public.site_settings
-add column if not exists primary_color text not null default '#c026ff';
-alter table public.site_settings
-add column if not exists secondary_color text not null default '#62ff2e';
-alter table public.site_settings
-add column if not exists comments_enabled boolean not null default true;
-alter table public.site_settings
-add column if not exists reactions_enabled boolean not null default true;
-alter table public.site_settings
-add column if not exists featured_clip_url text not null default '';
-alter table public.site_settings
-add column if not exists question_of_week text not null default '';
-alter table public.site_settings
-add column if not exists updated_at timestamptz not null default now();
-
+-- Allow the public/admin site to save "dark" background mode too.
 alter table public.site_settings drop constraint if exists site_settings_background_mode_check;
+
 alter table public.site_settings add constraint site_settings_background_mode_check
-check (background_mode in ('neon', 'pink', 'royal', 'green', 'lowlag'));
+check (background_mode in ('neon', 'pink', 'royal', 'green', 'lowlag', 'dark'));
 
-insert into public.site_settings (id)
-values ('main')
-on conflict (id) do nothing;
-
-alter table public.site_settings enable row level security;
-
-drop policy if exists "Anyone can read site settings" on public.site_settings;
-drop policy if exists "Admins can update site settings" on public.site_settings;
-drop policy if exists "Admins can insert site settings" on public.site_settings;
-
-create policy "Anyone can read site settings"
-on public.site_settings
-for select
-to anon, authenticated
-using (true);
-
-create policy "Admins can update site settings"
-on public.site_settings
-for update
-to authenticated
-using (public.is_admin())
-with check (public.is_admin());
-
-create policy "Admins can insert site settings"
-on public.site_settings
-for insert
-to authenticated
-with check (public.is_admin());
-
-create table if not exists public.fan_wall (
-  id uuid primary key default gen_random_uuid(),
-  owner_id uuid default auth.uid(),
-  username text not null check (char_length(username) between 2 and 24),
-  message text not null check (char_length(message) between 1 and 140),
-  vibe text not null default '💜',
-  topic text not null default 'shoutout',
-  theme text not null default 'neon',
-  hearts integer not null default 0,
-  bolts integer not null default 0,
-  fires integer not null default 0,
-  crowns integer not null default 0,
-  wins integer not null default 0,
-  controllers integer not null default 0,
-  reports integer not null default 0,
-  hidden boolean not null default false,
-  created_at timestamptz not null default now()
+-- Clear TikTok page links from Clip Video URL.
+-- The video modal needs a direct Supabase MP4/WebM/MOV file URL, not a TikTok page URL.
+update public.site_settings
+set
+  clip_video_url = '',
+  updated_at = now()
+where id = 'main'
+and (
+  clip_video_url ilike '%tiktok.com%'
+  or clip_video_url ilike '%tiktok.com/t/%'
 );
 
-alter table public.fan_wall add column if not exists owner_id uuid default auth.uid();
-alter table public.fan_wall add column if not exists vibe text not null default '💜';
-alter table public.fan_wall add column if not exists topic text not null default 'shoutout';
-alter table public.fan_wall add column if not exists theme text not null default 'neon';
-alter table public.fan_wall add column if not exists hearts integer not null default 0;
-alter table public.fan_wall add column if not exists bolts integer not null default 0;
-alter table public.fan_wall add column if not exists fires integer not null default 0;
-alter table public.fan_wall add column if not exists crowns integer not null default 0;
-alter table public.fan_wall add column if not exists wins integer not null default 0;
-alter table public.fan_wall add column if not exists controllers integer not null default 0;
-alter table public.fan_wall add column if not exists reports integer not null default 0;
-alter table public.fan_wall add column if not exists hidden boolean not null default false;
-alter table public.fan_wall alter column owner_id set default auth.uid();
+-- Make sure fan_wall has owner/auth columns needed for "delete my own comment".
+alter table public.fan_wall
+add column if not exists owner_id uuid;
 
-alter table public.fan_wall drop constraint if exists fan_wall_vibe_check;
-alter table public.fan_wall add constraint fan_wall_vibe_check
-check (vibe in ('💜', '💚', '⚡', '🎮', '🔥', '👑', '🦋', '🌸'));
+alter table public.fan_wall
+alter column owner_id set default auth.uid();
 
-alter table public.fan_wall drop constraint if exists fan_wall_topic_check;
-alter table public.fan_wall add constraint fan_wall_topic_check
-check (topic in ('shoutout', 'map', 'clip', 'question', 'duo', 'wmoment'));
+alter table public.fan_wall
+add column if not exists reports integer not null default 0;
 
-alter table public.fan_wall drop constraint if exists fan_wall_theme_check;
-alter table public.fan_wall add constraint fan_wall_theme_check
-check (theme in ('neon', 'royal', 'tryhard', 'cozy', 'pink'));
+alter table public.fan_wall
+add column if not exists hidden boolean not null default false;
 
 alter table public.fan_wall enable row level security;
 
+-- Clean old policy names from previous versions.
+drop policy if exists "Anyone can read fan wall" on public.fan_wall;
+drop policy if exists "Anyone can post fan wall" on public.fan_wall;
+drop policy if exists "Anyone can react to fan wall" on public.fan_wall;
+drop policy if exists "Authenticated users can post comments" on public.fan_wall;
+drop policy if exists "Anyone can react/report comments" on public.fan_wall;
 drop policy if exists "Anyone can read visible comments" on public.fan_wall;
 drop policy if exists "Admins can read all comments" on public.fan_wall;
 drop policy if exists "Signed in visitors can post comments" on public.fan_wall;
@@ -180,18 +48,21 @@ drop policy if exists "Users can delete their own comments" on public.fan_wall;
 drop policy if exists "Admins can update comment moderation" on public.fan_wall;
 drop policy if exists "Admins can delete any comment" on public.fan_wall;
 
+-- Public visitors can only read visible, non-reported comments.
 create policy "Anyone can read visible comments"
 on public.fan_wall
 for select
 to anon, authenticated
 using (hidden = false and reports < 3);
 
+-- Admins can read every comment, including hidden/reported.
 create policy "Admins can read all comments"
 on public.fan_wall
 for select
 to authenticated
 using (public.is_admin());
 
+-- Anonymous signed-in visitors can post comments.
 create policy "Signed in visitors can post comments"
 on public.fan_wall
 for insert
@@ -207,6 +78,7 @@ with check (
   and reports >= 0
 );
 
+-- Visitors can react/report visible comments.
 create policy "Signed in visitors can react or report"
 on public.fan_wall
 for update
@@ -223,12 +95,14 @@ with check (
   and reports >= 0
 );
 
+-- Visitors can delete only comments from their own anonymous session/device.
 create policy "Users can delete their own comments"
 on public.fan_wall
 for delete
 to authenticated
 using (owner_id = auth.uid());
 
+-- Admins can hide/unhide/reset reports.
 create policy "Admins can update comment moderation"
 on public.fan_wall
 for update
@@ -236,6 +110,7 @@ to authenticated
 using (public.is_admin())
 with check (public.is_admin());
 
+-- Admins can delete any comment.
 create policy "Admins can delete any comment"
 on public.fan_wall
 for delete
@@ -243,149 +118,13 @@ to authenticated
 using (public.is_admin());
 
 grant usage on schema public to anon, authenticated;
-grant select on public.site_settings to anon, authenticated;
-grant insert, update on public.site_settings to authenticated;
-grant select on public.admin_users to authenticated;
 
 grant select on public.fan_wall to anon, authenticated;
 grant insert on public.fan_wall to authenticated;
+
 revoke update on public.fan_wall from anon, authenticated;
-grant update (hearts, bolts, fires, crowns, wins, controllers, reports, hidden) on public.fan_wall to authenticated;
+grant update (hearts, bolts, fires, crowns, wins, controllers, reports, hidden)
+on public.fan_wall
+to authenticated;
+
 grant delete on public.fan_wall to authenticated;
-
--- IMPORTANT: Replace YOUR_ADMIN_EMAIL_HERE with your email, then run this one line too.
--- Example: insert into public.admin_users (email) values ('yourname@gmail.com') on conflict (email) do nothing;
--- insert into public.admin_users (email) values ('YOUR_ADMIN_EMAIL_HERE') on conflict (email) do nothing;
-
-
--- ADMIN V2: announcement bar, top fans, map voting controls.
--- Safe to run multiple times.
-
-alter table public.site_settings add column if not exists announcement_enabled boolean not null default false;
-alter table public.site_settings add column if not exists announcement_text text not null default 'New updates will show here.';
-alter table public.site_settings add column if not exists show_featured_clip boolean not null default true;
-alter table public.site_settings add column if not exists show_leaderboard boolean not null default true;
-alter table public.site_settings add column if not exists vote_enabled boolean not null default true;
-alter table public.site_settings add column if not exists vote_question text not null default 'What map should Female EMX make next?';
-alter table public.site_settings add column if not exists vote_option_1 text not null default 'Zone Wars';
-alter table public.site_settings add column if not exists vote_option_2 text not null default 'Box Fights';
-alter table public.site_settings add column if not exists vote_option_3 text not null default '1v1 Map';
-alter table public.site_settings add column if not exists vote_option_4 text not null default 'Deathrun';
-alter table public.site_settings add column if not exists vote_option_5 text not null default 'Aim/Edit Practice';
-alter table public.site_settings add column if not exists vote_option_6 text not null default 'Fashion Map';
-
-create table if not exists public.map_votes (
-  id uuid primary key default gen_random_uuid(),
-  owner_id uuid not null default auth.uid(),
-  option_key text not null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(owner_id)
-);
-
-alter table public.map_votes add column if not exists owner_id uuid not null default auth.uid();
-alter table public.map_votes add column if not exists option_key text not null default 'option_1';
-alter table public.map_votes add column if not exists created_at timestamptz not null default now();
-alter table public.map_votes add column if not exists updated_at timestamptz not null default now();
-
-alter table public.map_votes drop constraint if exists map_votes_option_key_check;
-alter table public.map_votes add constraint map_votes_option_key_check
-check (option_key in ('option_1','option_2','option_3','option_4','option_5','option_6'));
-
-alter table public.map_votes enable row level security;
-
-drop policy if exists "Anyone can read map votes" on public.map_votes;
-drop policy if exists "Users can insert their vote" on public.map_votes;
-drop policy if exists "Users can update their vote" on public.map_votes;
-drop policy if exists "Users/admins can delete map votes" on public.map_votes;
-
-create policy "Anyone can read map votes"
-on public.map_votes
-for select
-to anon, authenticated
-using (true);
-
-create policy "Users can insert their vote"
-on public.map_votes
-for insert
-to authenticated
-with check (owner_id = auth.uid());
-
-create policy "Users can update their vote"
-on public.map_votes
-for update
-to authenticated
-using (owner_id = auth.uid() or public.is_admin())
-with check (owner_id = auth.uid() or public.is_admin());
-
-create policy "Users/admins can delete map votes"
-on public.map_votes
-for delete
-to authenticated
-using (owner_id = auth.uid() or public.is_admin());
-
-grant select on public.map_votes to anon, authenticated;
-grant insert, update, delete on public.map_votes to authenticated;
-
--- Make sure your admin email is allowed. You can run this as-is for this project.
-insert into public.admin_users (email)
-values ('jordantj333@gmail.com')
-on conflict (email) do nothing;
-
-
--- ADMIN V4 MEDIA + CUSTOM BRANDING UPGRADE
-alter table public.site_settings add column if not exists logo_url text not null default '';
-alter table public.site_settings add column if not exists tiktok_button_title text not null default 'Watch on TikTok';
-alter table public.site_settings add column if not exists tiktok_button_subtitle text not null default '@ttfemale_emx';
-alter table public.site_settings add column if not exists emx_button_title text not null default 'EMX Tweaks x Macros';
-alter table public.site_settings add column if not exists emx_button_subtitle text not null default 'Official EMX Vercel website';
-alter table public.site_settings add column if not exists fortnite_button_title text not null default 'Play My Fortnite Maps';
-alter table public.site_settings add column if not exists fortnite_button_subtitle text not null default 'Female EMX maps on Fortnite.gg';
-alter table public.site_settings add column if not exists clip_enabled boolean not null default false;
-alter table public.site_settings add column if not exists clip_title text not null default 'Clip of the Week';
-alter table public.site_settings add column if not exists clip_description text not null default 'Watch the latest Female EMX clip inside the app.';
-alter table public.site_settings add column if not exists clip_video_url text not null default '';
-alter table public.site_settings add column if not exists clip_poster_url text not null default '';
-
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values (
-  'female-emx-media',
-  'female-emx-media',
-  true,
-  26214400,
-  array['video/mp4','video/webm','video/quicktime','image/jpeg','image/png','image/webp']::text[]
-)
-on conflict (id) do update set
-  public = excluded.public,
-  file_size_limit = excluded.file_size_limit,
-  allowed_mime_types = excluded.allowed_mime_types;
-
-drop policy if exists "Public read Female EMX media" on storage.objects;
-drop policy if exists "Admins upload Female EMX media" on storage.objects;
-drop policy if exists "Admins update Female EMX media" on storage.objects;
-drop policy if exists "Admins delete Female EMX media" on storage.objects;
-
-create policy "Public read Female EMX media"
-on storage.objects
-for select
-to anon, authenticated
-using (bucket_id = 'female-emx-media');
-
-create policy "Admins upload Female EMX media"
-on storage.objects
-for insert
-to authenticated
-with check (bucket_id = 'female-emx-media' and public.is_admin());
-
-create policy "Admins update Female EMX media"
-on storage.objects
-for update
-to authenticated
-using (bucket_id = 'female-emx-media' and public.is_admin())
-with check (bucket_id = 'female-emx-media' and public.is_admin());
-
-create policy "Admins delete Female EMX media"
-on storage.objects
-for delete
-to authenticated
-using (bucket_id = 'female-emx-media' and public.is_admin());

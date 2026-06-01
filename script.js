@@ -27,9 +27,9 @@ const IS_LOCAL_PREVIEW = (() => {
   );
 })();
 
-/* Remove old service worker/cache one time so her phone stops opening old crashing files */
+/* Remove old service worker/cache one time so phones stop opening old crashing files */
 (function clearOldCacheOnce() {
-  const cacheFlag = "femaleEmxClearedOldCacheV8";
+  const cacheFlag = "femaleEmxClearedOldCacheV9";
 
   if (localStorage.getItem(cacheFlag) === "yes") return;
   localStorage.setItem(cacheFlag, "yes");
@@ -60,7 +60,6 @@ const hypeText = document.getElementById("hypeText");
 const boostBtn = document.getElementById("boostBtn");
 const logoTap = document.getElementById("logoTap");
 const soundToggle = document.getElementById("soundToggle");
-
 
 const SITE_DEFAULTS = {
   brandName: "Female EMX",
@@ -108,6 +107,7 @@ function publicSupabaseConfigured() {
 function applySiteSettings(rawSettings) {
   if (rawSettings) {
     window.__FEMALE_EMX_RAW_SETTINGS = rawSettings;
+
     SITE_SETTINGS = {
       ...SITE_SETTINGS,
       brandName: rawSettings.brand_name || SITE_SETTINGS.brandName,
@@ -116,17 +116,20 @@ function applySiteSettings(rawSettings) {
       emxTweaksUrl: rawSettings.emx_tweaks_url || SITE_SETTINGS.emxTweaksUrl,
       fortniteMapsUrl: rawSettings.fortnite_maps_url || SITE_SETTINGS.fortniteMapsUrl,
       logoUrl: rawSettings.logo_url || SITE_SETTINGS.logoUrl,
+
       tiktokButtonTitle: rawSettings.tiktok_button_title || SITE_SETTINGS.tiktokButtonTitle,
       tiktokButtonSubtitle: rawSettings.tiktok_button_subtitle || SITE_SETTINGS.tiktokButtonSubtitle,
       emxButtonTitle: rawSettings.emx_button_title || SITE_SETTINGS.emxButtonTitle,
       emxButtonSubtitle: rawSettings.emx_button_subtitle || SITE_SETTINGS.emxButtonSubtitle,
       fortniteButtonTitle: rawSettings.fortnite_button_title || SITE_SETTINGS.fortniteButtonTitle,
       fortniteButtonSubtitle: rawSettings.fortnite_button_subtitle || SITE_SETTINGS.fortniteButtonSubtitle,
+
       clipEnabled: rawSettings.clip_enabled === true || rawSettings.show_featured_clip === true,
       clipTitle: rawSettings.clip_title || SITE_SETTINGS.clipTitle,
       clipDescription: rawSettings.clip_description || SITE_SETTINGS.clipDescription,
-      clipVideoUrl: rawSettings.clip_video_url || rawSettings.featured_clip_url || SITE_SETTINGS.clipVideoUrl,
+      clipVideoUrl: rawSettings.clip_video_url || SITE_SETTINGS.clipVideoUrl,
       clipPosterUrl: rawSettings.clip_poster_url || SITE_SETTINGS.clipPosterUrl,
+
       statusBadge: rawSettings.status_badge || SITE_SETTINGS.statusBadge,
       tagline: rawSettings.tagline || SITE_SETTINGS.tagline,
       pinnedMessage: rawSettings.pinned_message || SITE_SETTINGS.pinnedMessage,
@@ -149,7 +152,7 @@ function applySiteSettings(rawSettings) {
   document.body.style.setProperty("--purple", SITE_SETTINGS.primaryColor);
   document.body.style.setProperty("--green", SITE_SETTINGS.secondaryColor);
 
-  ["neon", "pink", "royal", "green", "lowlag"].forEach((mode) => {
+  ["neon", "pink", "royal", "green", "lowlag", "dark"].forEach((mode) => {
     document.body.classList.toggle("bg-mode-" + mode, SITE_SETTINGS.backgroundMode === mode);
   });
 
@@ -164,12 +167,14 @@ function applySiteSettings(rawSettings) {
   document.querySelectorAll("[data-logo-image]").forEach((img) => {
     if (SITE_SETTINGS.logoUrl) img.src = SITE_SETTINGS.logoUrl;
   });
+
   const tiktokButtonTitle = document.getElementById("tiktokButtonTitle");
   const tiktokButtonSubtitle = document.getElementById("tiktokButtonSubtitle");
   const emxButtonTitle = document.getElementById("emxButtonTitle");
   const emxButtonSubtitle = document.getElementById("emxButtonSubtitle");
   const fortniteButtonTitle = document.getElementById("fortniteButtonTitle");
   const fortniteButtonSubtitle = document.getElementById("fortniteButtonSubtitle");
+
   if (tiktokButtonTitle) tiktokButtonTitle.textContent = SITE_SETTINGS.tiktokButtonTitle;
   if (tiktokButtonSubtitle) tiktokButtonSubtitle.textContent = SITE_SETTINGS.tiktokButtonSubtitle;
   if (emxButtonTitle) emxButtonTitle.textContent = SITE_SETTINGS.emxButtonTitle;
@@ -244,7 +249,7 @@ function subscribeToSiteSettings() {
   });
 
   settingsClient
-    .channel("female-emx-site-settings-live-v3")
+    .channel("female-emx-site-settings-live-v4")
     .on(
       "postgres_changes",
       {
@@ -457,7 +462,7 @@ if (logoTap) {
   });
 }
 
-/* PUBLIC / DEMO COMMENTS - STABLE VERSION WITH OWN DELETE + REPORT */
+/* PUBLIC / DEMO COMMENTS - FIXED FOR NEW VISITORS */
 (function setupComments() {
   const convoForm = document.getElementById("convoForm");
   const convoUsername = document.getElementById("convoUsername");
@@ -479,6 +484,7 @@ if (logoTap) {
   let online = false;
   let canPost = false;
   let loading = false;
+  let postingComment = false;
   let currentUser = null;
   let selectedVibe = "💜";
   let selectedTopic = "shoutout";
@@ -541,8 +547,7 @@ if (logoTap) {
   }
 
   async function ensureAnonymousUser() {
-    canPost = false;
-    currentUser = null;
+    if (!online || !db) return null;
 
     try {
       const sessionResult = await db.auth.getSession();
@@ -551,22 +556,27 @@ if (logoTap) {
       if (sessionUser) {
         currentUser = sessionUser;
         canPost = true;
-        return;
+        return sessionUser;
       }
 
       const signInResult = await db.auth.signInAnonymously();
 
       if (signInResult.error) {
         console.error("Anonymous sign-in error:", signInResult.error);
-        showToast("Enable Anonymous Sign-Ins in Supabase Auth.");
-        return;
+        canPost = false;
+        currentUser = null;
+        return null;
       }
 
-      currentUser = signInResult?.data?.user || null;
-      canPost = !!currentUser;
+      const newUser = signInResult?.data?.user || signInResult?.data?.session?.user || null;
+      currentUser = newUser;
+      canPost = !!newUser;
+      return newUser;
     } catch (error) {
       console.error("Auth setup error:", error);
-      showToast("Comments sign-in failed.");
+      canPost = false;
+      currentUser = null;
+      return null;
     }
   }
 
@@ -831,11 +841,21 @@ if (logoTap) {
       return;
     }
 
-    if (convoMode) convoMode.textContent = SITE_SETTINGS.commentsEnabled ? (canPost ? "Comments online" : "Comments online · sign-in needed") : "Comments paused";
+    if (convoMode) {
+      convoMode.textContent = SITE_SETTINGS.commentsEnabled
+        ? (canPost ? "Comments online" : "Comments online · sign-in needed")
+        : "Comments paused";
+    }
+
     renderComments(data || []);
   }
 
   async function sendMessage(submitBtn) {
+    if (postingComment) {
+      showToast("Posting your comment...");
+      return;
+    }
+
     if (!SITE_SETTINGS.commentsEnabled) {
       showToast("Comments are paused right now.");
       return;
@@ -844,7 +864,7 @@ if (logoTap) {
     const now = Date.now();
     const lastPost = Number(localStorage.getItem("femaleEmxLastPostTime") || 0);
 
-    if (now - lastPost < 7000) {
+    if (now - lastPost < 4000) {
       showToast("Wait a few seconds before posting again.");
       return;
     }
@@ -862,11 +882,7 @@ if (logoTap) {
       return;
     }
 
-    if (online && !canPost) {
-      showToast("Enable Anonymous Sign-Ins in Supabase Auth first.");
-      return;
-    }
-
+    postingComment = true;
     if (submitBtn) submitBtn.disabled = true;
 
     const post = {
@@ -888,7 +904,6 @@ if (logoTap) {
       created_at: new Date().toISOString()
     };
 
-    localStorage.setItem("femaleEmxLastPostTime", String(now));
     convoUsername.value = username;
 
     if (!online) {
@@ -899,16 +914,28 @@ if (logoTap) {
       convoMessage.value = "";
       updateCharCount();
       renderComments(current);
+
+      localStorage.setItem("femaleEmxLastPostTime", String(Date.now()));
       showToast("Demo comment posted.");
 
+      postingComment = false;
       if (submitBtn) submitBtn.disabled = false;
+      return;
+    }
+
+    const user = await ensureAnonymousUser();
+
+    if (!user) {
+      postingComment = false;
+      if (submitBtn) submitBtn.disabled = false;
+      showToast("Comment login failed. Refresh and try again.");
       return;
     }
 
     const { error } = await db
       .from("fan_wall")
       .insert({
-        owner_id: currentUser.id,
+        owner_id: user.id,
         username,
         message,
         vibe: selectedVibe,
@@ -916,13 +943,16 @@ if (logoTap) {
         theme: selectedTheme
       });
 
+    postingComment = false;
     if (submitBtn) submitBtn.disabled = false;
 
     if (error) {
       console.error("Comment post error:", error);
-      showToast("Comment failed. Check Supabase Auth/SQL.");
+      showToast("Comment failed. Refresh and try again.");
       return;
     }
+
+    localStorage.setItem("femaleEmxLastPostTime", String(Date.now()));
 
     convoMessage.value = "";
     updateCharCount();
@@ -1139,8 +1169,11 @@ if (logoTap) {
 
   window.addEventListener("female-emx-settings-updated", () => {
     if (convoMode) {
-      convoMode.textContent = SITE_SETTINGS.commentsEnabled ? (online ? "Comments online" : "Demo comments") : "Comments paused";
+      convoMode.textContent = SITE_SETTINGS.commentsEnabled
+        ? (online ? "Comments online" : "Demo comments")
+        : "Comments paused";
     }
+
     setStats(feedCache);
   });
 
@@ -1155,13 +1188,11 @@ setDailyChallenge();
 updateHype();
 initAdminV2PublicExtras();
 
-
 /* ADMIN V2 PUBLIC EXTRAS: announcement, featured clip, top fans, map voting */
 function initAdminV2PublicExtras() {
   const announcementBar = document.getElementById("announcementBar");
   const announcementText = document.getElementById("announcementText");
   const featuredClipSection = document.getElementById("featuredClipSection");
-  const openClipModalBtn = document.getElementById("openClipModalBtn");
   const featuredClipTitleText = document.getElementById("featuredClipTitleText");
   const featuredClipDescriptionText = document.getElementById("featuredClipDescriptionText");
   const topFansSection = document.getElementById("topFansSection");
@@ -1202,41 +1233,65 @@ function initAdminV2PublicExtras() {
 
   function client() {
     if (!configured()) return null;
+
     publicClient = publicClient || window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false
+      }
     });
+
     return publicClient;
   }
 
   async function ensureAnon() {
     const c = client();
     if (!c) return null;
+
     const session = await c.auth.getSession();
+
     if (session?.data?.session?.user) {
       publicUser = session.data.session.user;
       return publicUser;
     }
+
     const res = await c.auth.signInAnonymously();
+
     if (res.error) {
       console.warn("Vote anonymous auth failed", res.error);
       return null;
     }
-    publicUser = res.data.user;
+
+    publicUser = res.data.user || res.data.session?.user || null;
     return publicUser;
   }
 
   function optionList() {
     const s = extrasSettings || fallbackSettings;
-    return [1,2,3,4,5,6].map((n) => ({ key: "option_" + n, label: s["vote_option_" + n] || "" })).filter((x) => x.label.trim());
+
+    return [1, 2, 3, 4, 5, 6]
+      .map((n) => ({
+        key: "option_" + n,
+        label: s["vote_option_" + n] || ""
+      }))
+      .filter((x) => x.label.trim());
   }
 
   async function loadExtrasSettings() {
     const c = client();
     extrasSettings = { ...fallbackSettings };
+
     if (c) {
-      const { data, error } = await c.from("site_settings").select("*").eq("id", CONFIG.settingsId).maybeSingle();
+      const { data, error } = await c
+        .from("site_settings")
+        .select("*")
+        .eq("id", CONFIG.settingsId)
+        .maybeSingle();
+
       if (!error && data) extrasSettings = { ...extrasSettings, ...data };
     }
+
     applyExtrasSettings();
   }
 
@@ -1249,11 +1304,14 @@ function initAdminV2PublicExtras() {
     }
 
     if (featuredClipSection) {
-      const clip = String(s.clip_video_url || s.featured_clip_url || "").trim();
-      const enabled = (s.clip_enabled === true && s.show_featured_clip !== false && !!clip);
+      const clip = String(s.clip_video_url || "").trim();
+      const enabled = s.clip_enabled === true && s.show_featured_clip !== false && !!clip;
+
       featuredClipSection.classList.toggle("hidden", !enabled);
+
       if (featuredClipTitleText) featuredClipTitleText.textContent = s.clip_title || "Clip of the Week";
       if (featuredClipDescriptionText) featuredClipDescriptionText.textContent = s.clip_description || "Watch the latest Female EMX clip inside the app.";
+
       window.FEMALE_EMX_CLIP = {
         title: s.clip_title || "Clip of the Week",
         description: s.clip_description || "Watch the latest Female EMX clip inside the app.",
@@ -1271,8 +1329,10 @@ function initAdminV2PublicExtras() {
 
   function renderVoteButtons() {
     if (!voteOptionsEl) return;
+
     const votedKey = localStorage.getItem("femaleEmxVoteKey") || "";
     voteOptionsEl.textContent = "";
+
     optionList().forEach((option) => {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -1285,13 +1345,17 @@ function initAdminV2PublicExtras() {
 
   function renderVoteResults(rows) {
     if (!voteResultsEl) return;
+
     const options = optionList();
     const counts = Object.fromEntries(options.map((o) => [o.key, 0]));
+
     (rows || []).forEach((row) => {
       if (counts[row.option_key] !== undefined) counts[row.option_key] += 1;
     });
-    const total = Object.values(counts).reduce((a,b) => a + b, 0);
+
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
     voteResultsEl.textContent = "";
+
     options.forEach((option) => {
       const count = counts[option.key] || 0;
       const percent = total ? Math.round((count / total) * 100) : 0;
@@ -1308,39 +1372,52 @@ function initAdminV2PublicExtras() {
   async function loadVotes() {
     const c = client();
     if (!c || !voteResultsEl) return;
+
     const { data, error } = await c.from("map_votes").select("option_key");
+
     if (error) {
       console.warn("Vote load error", error);
       voteResultsEl.textContent = "Votes unavailable.";
       return;
     }
+
     renderVoteResults(data || []);
   }
 
   async function submitVote(optionKey) {
     const s = extrasSettings || fallbackSettings;
+
     if (s.vote_enabled === false) {
       showToast("Voting is paused right now.");
       return;
     }
+
     const c = client();
+
     if (!c) {
       localStorage.setItem("femaleEmxVoteKey", optionKey);
       renderVoteButtons();
       showToast("Demo vote saved on this phone.");
       return;
     }
+
     const user = await ensureAnon();
+
     if (!user) {
       showToast("Vote sign-in failed. Enable anonymous sign-ins.");
       return;
     }
-    const { error } = await c.from("map_votes").upsert({ owner_id: user.id, option_key: optionKey }, { onConflict: "owner_id" });
+
+    const { error } = await c
+      .from("map_votes")
+      .upsert({ owner_id: user.id, option_key: optionKey }, { onConflict: "owner_id" });
+
     if (error) {
       console.warn("Vote save error", error);
       showToast("Vote failed. Run the Admin V2 SQL.");
       return;
     }
+
     localStorage.setItem("femaleEmxVoteKey", optionKey);
     renderVoteButtons();
     showToast("Vote saved 💜");
@@ -1350,29 +1427,42 @@ function initAdminV2PublicExtras() {
   async function loadTopFans() {
     const c = client();
     if (!c || !topFansList) return;
+
     const { data, error } = await c
       .from("fan_wall")
       .select("username, hearts, bolts, fires, crowns, wins, controllers, hidden, reports")
       .eq("hidden", false)
       .lt("reports", 3)
       .limit(200);
+
     if (error) {
       console.warn("Top fans error", error);
       topFansList.textContent = "Top fans unavailable.";
       return;
     }
+
     const scores = new Map();
+
     (data || []).forEach((item) => {
       const username = item.username || "@fan";
-      const score = ["hearts","bolts","fires","crowns","wins","controllers"].reduce((sum, k) => sum + Number(item[k] || 0), 0);
+      const score = ["hearts", "bolts", "fires", "crowns", "wins", "controllers"]
+        .reduce((sum, k) => sum + Number(item[k] || 0), 0);
+
       scores.set(username, (scores.get(username) || 0) + score);
     });
-    const top = [...scores.entries()].sort((a,b) => b[1] - a[1]).filter((x) => x[1] > 0).slice(0, 5);
+
+    const top = [...scores.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .filter((x) => x[1] > 0)
+      .slice(0, 5);
+
     topFansList.textContent = "";
+
     if (!top.length) {
       topFansList.textContent = "React to comments to build the leaderboard.";
       return;
     }
+
     top.forEach(([username, score], index) => {
       const row = document.createElement("div");
       row.className = "top-fan-row";
@@ -1385,6 +1475,7 @@ function initAdminV2PublicExtras() {
     voteOptionsEl.addEventListener("click", (event) => {
       const btn = event.target.closest("[data-vote-key]");
       if (!btn) return;
+
       submitVote(btn.dataset.voteKey);
     });
   }
@@ -1402,8 +1493,7 @@ function initAdminV2PublicExtras() {
   });
 }
 
-
-/* ADMIN V4.1 FEATURED CLIP MODAL PLAYER - VIDEO LOAD FIX */
+/* ADMIN V4.1 FEATURED CLIP MODAL PLAYER */
 function setupFeaturedClipModal() {
   const modal = document.getElementById("clipModal");
   const backdrop = document.getElementById("clipModalBackdrop");
@@ -1426,6 +1516,7 @@ function setupFeaturedClipModal() {
 
   function fmt(seconds) {
     if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60).toString().padStart(2, "0");
     return mins + ":" + secs;
@@ -1433,6 +1524,7 @@ function setupFeaturedClipModal() {
 
   function setStatus(message, isError) {
     if (!status) return;
+
     status.textContent = message;
     status.classList.toggle("error", !!isError);
   }
@@ -1440,6 +1532,7 @@ function setupFeaturedClipModal() {
   function resetTimes() {
     if (current) current.textContent = "0:00";
     if (duration) duration.textContent = "0:00";
+
     seek.value = 0;
   }
 
@@ -1512,6 +1605,7 @@ function setupFeaturedClipModal() {
 
     video.pause();
     resetTimes();
+
     playBtn.textContent = "Play";
     playBtn.disabled = true;
     seek.disabled = true;
@@ -1524,6 +1618,7 @@ function setupFeaturedClipModal() {
     if (currentClipUrl !== url) {
       currentClipUrl = url;
       loadingClip = true;
+
       video.removeAttribute("src");
       video.load();
       video.src = url;
@@ -1548,6 +1643,7 @@ function setupFeaturedClipModal() {
     document.body.classList.add("modal-open");
 
     const ok = loadClipIntoVideo(clip);
+
     if (!ok) {
       playBtn.disabled = true;
       seek.disabled = true;
@@ -1564,6 +1660,7 @@ function setupFeaturedClipModal() {
 
   openBtn.addEventListener("click", openModal);
   closeBtn.addEventListener("click", closeModal);
+
   if (backdrop) backdrop.addEventListener("click", closeModal);
 
   playBtn.addEventListener("click", tryPlay);
@@ -1598,6 +1695,7 @@ function setupFeaturedClipModal() {
   video.addEventListener("timeupdate", updateTimes);
   video.addEventListener("play", updateTimes);
   video.addEventListener("pause", updateTimes);
+
   video.addEventListener("ended", () => {
     playBtn.textContent = "Replay";
     setStatus("Clip ended.", false);
@@ -1606,6 +1704,7 @@ function setupFeaturedClipModal() {
   video.addEventListener("error", () => {
     loadingClip = false;
     playBtn.disabled = false;
+
     console.error("Video element error:", video.error, video.currentSrc || video.src);
     setStatus("Video failed to load. Re-upload as MP4 H.264/AAC under 25 MB, or check that Clip Video URL is not a poster image.", true);
     updateTimes();
